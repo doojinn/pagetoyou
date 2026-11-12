@@ -1,6 +1,6 @@
 {
   "name": "pagetoyou",
-  "version": "1.0.0-rc.1",
+  "version": "1.0.0-rc.2",
   "private": true,
   "description": "予页互动网页礼物创作与账号发布体验版",
   "engines": { "node": ">=24" },

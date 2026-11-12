@@ -1,6 +1,6 @@
 # 予页 pagetoyou
 
-本机完整体验版 v1.0.0-rc.1：统一礼物模板库、真实账号、个人中心和发布快照。照片树现使用真实 WebGL 金属球体、照片实体、环境反射与泛光，可聚合为树或散开为照片星云。尚未部署公网。
+本机完整体验版 v1.0.0-rc.2：统一礼物模板库、真实账号、个人中心和发布快照。照片树现使用真实 WebGL 金属球体、照片实体、环境反射与泛光，可聚合为树或散开为照片星云。尚未部署公网。
 
 私有仓库：[doojinn/pagetoyou](https://github.com/doojinn/pagetoyou)。本版为发布候选；公网应用尚未部署。完整验收记录见 [RELEASE-CHECKLIST.md](RELEASE-CHECKLIST.md)，部署说明见 [DEPLOYMENT.md](DEPLOYMENT.md)。
 
