@@ -1,0 +1,9 @@
+.git
+.data
+.document-work
+.career-build
+node_modules
+.env
+.env.*
+*.sqlite*
+参赛材料

@@ -26,6 +26,7 @@ function validateGift(input) {
     return { src: photo.src, name: str(photo.name || '', 100), caption: str(photo.caption || '', 100) };
   });
   if (input.kind === 'card') {
+    if(gift.photos.length>3)throw fail(400,'贺卡最多支持 3 张照片。');
     if (!input.card || !Array.isArray(input.card.elements) || input.card.elements.length > 30) throw fail(400, '贺卡布局无效。');
     gift.card = { mode: input.card.mode === 'template' ? 'template' : 'free', elements: input.card.elements.map((e, i) => {
       if (!e || !['text', 'photo', 'decor'].includes(e.type)) throw fail(400, '贺卡元素无效。');
@@ -42,7 +43,7 @@ function validateGift(input) {
     if(typeof d.color!=='string'||!/^#[0-9a-fA-F]{6}$/.test(d.color)||!Number.isFinite(d.glow)||d.glow<0||d.glow>100)throw fail(400,'光效参数无效。');
     if(d.envelope!==undefined){if(!['ivory','blue','sage','rose','meadow','hydrangea','parchment','mulberry','baroque','love','linen','blush'].includes(d.envelope))throw fail(400,'信封款式无效。');gift.design.envelope=d.envelope;}
     if(d.seal!==undefined){if(typeof d.seal!=='string'||!/^#[0-9a-fA-F]{6}$/.test(d.seal))throw fail(400,'火漆颜色无效。');gift.design.seal=d.seal;}
-    for(const [key,values] of Object.entries({galleryStyle:['wall','ribbon','scrapbook'],photoIntro:['journey','explore']})){if(d[key]!==undefined){if(!values.includes(d[key]))throw fail(400,'照片场景样式无效。');gift.design[key]=d[key];}}
+    for(const [key,values] of Object.entries({sealStyle:['rose','pearl','crimson','sage','violet','gold'],galleryStyle:['wall','ribbon','scrapbook'],photoIntro:['journey','explore']})){if(d[key]!==undefined){if(!values.includes(d[key]))throw fail(400,'照片场景样式无效。');gift.design[key]=d[key];}}
     if(d.backgroundOpacity!==undefined){if(!Number.isFinite(d.backgroundOpacity)||d.backgroundOpacity<20||d.backgroundOpacity>100)throw fail(400,'背景可见度无效。');gift.design.backgroundOpacity=d.backgroundOpacity;}
     if(d.backgroundImage){const checked=validateGift({kind:'gallery',title:'background',author:'',words:'',photos:[{src:d.backgroundImage,name:'',caption:''}]});gift.design.backgroundImage=checked.photos[0].src;}
     gift.design.color=d.color;gift.design.glow=d.glow;gift.design.ending=str(d.ending,300);gift.design.music='';
@@ -57,6 +58,7 @@ function createApp(options = {}) {
   const db = new DatabaseSync(path.join(dataDir, 'pagetoyou.sqlite'));
   db.exec(`PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000;
     CREATE TABLE IF NOT EXISTS users(id TEXT PRIMARY KEY, username TEXT UNIQUE NOT NULL, display_name TEXT NOT NULL, salt TEXT NOT NULL, password_hash TEXT NOT NULL, created_at INTEGER NOT NULL);
+    CREATE TABLE IF NOT EXISTS recovery_codes(code_hash TEXT PRIMARY KEY,user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,expires_at INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS sessions(token_hash TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE, expires_at INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS gifts(id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id), token TEXT UNIQUE NOT NULL, draft_json TEXT NOT NULL, published_json TEXT, status TEXT NOT NULL DEFAULT 'draft', revision INTEGER NOT NULL DEFAULT 1, published_revision INTEGER, views INTEGER NOT NULL DEFAULT 0, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL);
     CREATE INDEX IF NOT EXISTS gifts_owner ON gifts(user_id, updated_at);
@@ -71,12 +73,13 @@ function createApp(options = {}) {
   function origin(req) { return configuredOrigin || `http://127.0.0.1:${server.address().port}`; }
   function send(res, status, value) { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(value)); }
   function user(req) { const raw = /(?:^|;\s*)pgy_session=([a-f0-9]{64})(?:;|$)/.exec(req.headers.cookie || ''); if (!raw) throw fail(401, '请先登录。'); const row = db.prepare('SELECT users.* FROM sessions JOIN users ON users.id=sessions.user_id WHERE token_hash=? AND expires_at>?').get(hash(raw[1]), Date.now()); if (!row) throw fail(401, '登录已过期，请重新登录。'); return row; }
-  function session(res, id) { const token = crypto.randomBytes(32).toString('hex'); db.prepare('INSERT INTO sessions VALUES(?,?,?)').run(hash(token), id, Date.now() + 7 * 86400000); res.setHeader('Set-Cookie', `pgy_session=${token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=604800${configuredOrigin.startsWith('https:') ? '; Secure' : ''}`); }
+  function session(res, id, remember=true) { const token = crypto.randomBytes(32).toString('hex'); db.prepare('INSERT INTO sessions VALUES(?,?,?)').run(hash(token), id, Date.now() + (remember?7*86400000:12*3600000)); res.setHeader('Set-Cookie', `pgy_session=${token}; HttpOnly; SameSite=Lax; Path=/${remember?'; Max-Age=604800':''}${configuredOrigin.startsWith('https:') ? '; Secure' : ''}`); }
   async function body(req, limit = 16 * 1024 * 1024) { if (!/^application\/json(?:;|$)/i.test(req.headers['content-type'] || '')) throw fail(415, '请求格式应为 JSON。'); let size = 0, parts = []; for await (const part of req) { size += part.length; if (size > limit) throw fail(413, '礼物内容过大，请减少照片数量或尺寸。'); parts.push(part); } try { return JSON.parse(Buffer.concat(parts).toString('utf8')); } catch { throw fail(400, '请求内容无效。'); } }
   function owner(id, uid) { const gift = db.prepare('SELECT * FROM gifts WHERE id=? AND user_id=?').get(id, uid); if (!gift) throw fail(404, '礼物不存在或你无权管理。'); return gift; }
   const server = http.createServer(async (req, res) => {
     res.setHeader('X-Content-Type-Options', 'nosniff'); res.setHeader('Referrer-Policy', 'no-referrer'); res.setHeader('X-Frame-Options', 'DENY');
     try {
+      if(req.url==='/healthz'&&['GET','HEAD'].includes(req.method)){res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});return res.end(req.method==='HEAD'?undefined:JSON.stringify({ok:true}));}
       const allowedHosts = new Set([new URL(origin(req)).host, `localhost:${server.address().port}`]);
       if (!allowedHosts.has(req.headers.host)) throw fail(403, '访问地址未被允许。');
       const pathname = new URL(req.url, origin(req)).pathname;
@@ -95,18 +98,32 @@ function createApp(options = {}) {
             if (!displayName || displayName.length > 30) throw fail(400, '昵称需为 1–30 个字符。');
             const salt = crypto.randomBytes(16).toString('hex'), passwordHash = (await scrypt(input.password, salt, 64)).toString('hex'), id = crypto.randomUUID();
             try { db.prepare('INSERT INTO users VALUES(?,?,?,?,?,?)').run(id, username, displayName, salt, passwordHash, Date.now()); } catch (e) { if (e.code?.includes('CONSTRAINT') || e.message.includes('UNIQUE')) throw fail(409, '此账号已被使用。'); throw e; }
-            session(res, id); return send(res, 201, { user: publicUser(db.prepare('SELECT * FROM users WHERE id=?').get(id)) });
+            session(res, id, input.remember!==false); return send(res, 201, { user: publicUser(db.prepare('SELECT * FROM users WHERE id=?').get(id)) });
           }
+          rate('login-user:'+username,16,15*60000);
           const row = db.prepare('SELECT * FROM users WHERE username=?').get(username);
           const candidate = await scrypt(input.password, row?.salt || 'pagetoyou-missing-account', 64);
           if (!row || !crypto.timingSafeEqual(candidate, Buffer.from(row.password_hash, 'hex'))) throw fail(401, '账号或密码不正确。');
-          session(res, row.id); return send(res, 200, { user: publicUser(row) });
+          session(res, row.id, input.remember!==false); return send(res, 200, { user: publicUser(row) });
         }
         if (pathname === '/api/auth/me' && req.method === 'GET') return send(res, 200, { user: publicUser(user(req)) });
         if (pathname === '/api/auth/logout' && req.method === 'POST') { const raw = /pgy_session=([a-f0-9]{64})/.exec(req.headers.cookie || ''); if (raw) db.prepare('DELETE FROM sessions WHERE token_hash=?').run(hash(raw[1])); res.setHeader('Set-Cookie', 'pgy_session=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0'); return send(res, 200, { ok: true }); }
         const published = /^\/api\/public\/([a-f0-9]{48})$/.exec(pathname);
         if (published && req.method === 'GET') { const row = db.prepare("SELECT * FROM gifts WHERE token=? AND status='published'").get(published[1]); if (!row) throw fail(404, '这份礼物不存在，或已停止分享。'); db.prepare('UPDATE gifts SET views=views+1 WHERE id=?').run(row.id); return send(res, 200, { gift: JSON.parse(row.published_json) }); }
+        if(pathname==='/api/auth/recover'&&req.method==='POST'){
+          rate('recover-ip:'+ip,12,3600000);const input=await body(req,4096),username=typeof input.username==='string'?input.username.trim().toLowerCase():'';
+          if(!/^[a-z0-9_]{3,32}$/.test(username)||typeof input.recoveryCode!=='string'||input.recoveryCode.length>80)throw fail(400,'账号或恢复码不正确，或恢复码已失效。');rate('recover-user:'+username,6,3600000);
+          if(typeof input.newPassword!=='string'||input.newPassword.length<8||input.newPassword.length>128)throw fail(400,'密码需为 8–128 位。');
+          const code=input.recoveryCode.replace(/[-\s]/g,'').toLowerCase(),row=db.prepare('SELECT * FROM users WHERE username=?').get(username),salt=crypto.randomBytes(16).toString('hex'),passwordHash=(await scrypt(input.newPassword,salt,64)).toString('hex');
+          const recovery=row&&db.prepare('SELECT * FROM recovery_codes WHERE code_hash=? AND user_id=? AND expires_at>?').get(hash(username+'|'+code),row.id,Date.now());if(!recovery)throw fail(400,'账号或恢复码不正确，或恢复码已失效。');
+          db.exec('BEGIN IMMEDIATE');try{if(db.prepare('DELETE FROM recovery_codes WHERE code_hash=?').run(recovery.code_hash).changes!==1)throw fail(400,'恢复码已失效。');db.prepare('UPDATE users SET salt=?,password_hash=? WHERE id=?').run(salt,passwordHash,row.id);db.prepare('DELETE FROM sessions WHERE user_id=?').run(row.id);db.prepare('DELETE FROM recovery_codes WHERE user_id=?').run(row.id);db.exec('COMMIT');}catch(e){db.exec('ROLLBACK');throw e;}return send(res,200,{ok:true});
+        }
         const account = user(req);
+        if(pathname==='/api/auth/recovery-codes'&&req.method==='POST'){
+          rate('recovery-codes:'+account.id,5,3600000);const input=await body(req,4096);if(typeof input.password!=='string'||input.password.length>128||!crypto.timingSafeEqual(await scrypt(input.password,account.salt,64),Buffer.from(account.password_hash,'hex')))throw fail(400,'当前密码不正确。');
+          const codes=Array.from({length:10},()=>crypto.randomBytes(12).toString('hex').match(/.{6}/g).join('-')),expiresAt=Date.now()+365*86400000;db.exec('BEGIN IMMEDIATE');try{db.prepare('DELETE FROM recovery_codes WHERE user_id=?').run(account.id);const insert=db.prepare('INSERT INTO recovery_codes VALUES(?,?,?)');for(const code of codes)insert.run(hash(account.username+'|'+code.replace(/-/g,'')),account.id,expiresAt);db.exec('COMMIT');}catch(e){db.exec('ROLLBACK');throw e;}return send(res,200,{codes,expiresAt});
+        }
+
         if (pathname === '/api/profile' && req.method === 'PUT') { const input = await body(req, 4096); if (typeof input.displayName !== 'string' || !input.displayName.trim() || input.displayName.trim().length > 30) throw fail(400, '昵称需为 1–30 个字符。'); db.prepare('UPDATE users SET display_name=? WHERE id=?').run(input.displayName.trim(), account.id); return send(res, 200, { user: publicUser(db.prepare('SELECT * FROM users WHERE id=?').get(account.id)) }); }
         if (pathname === '/api/auth/password' && req.method === 'POST') { rate('password:' + account.id, 10, 900000); const input = await body(req, 4096); if (typeof input.currentPassword !== 'string' || input.currentPassword.length > 128 || typeof input.newPassword !== 'string' || input.newPassword.length < 8 || input.newPassword.length > 128) throw fail(400, '密码需为 8–128 位。'); if (!crypto.timingSafeEqual(await scrypt(input.currentPassword, account.salt, 64), Buffer.from(account.password_hash, 'hex'))) throw fail(400, '当前密码不正确。'); const salt = crypto.randomBytes(16).toString('hex'); const next = (await scrypt(input.newPassword, salt, 64)).toString('hex'); db.prepare('UPDATE users SET salt=?,password_hash=? WHERE id=?').run(salt, next, account.id); db.prepare('DELETE FROM sessions WHERE user_id=?').run(account.id); session(res, account.id); return send(res, 200, { ok: true }); }
         if (pathname === '/api/gifts' && req.method === 'GET') { const rows = db.prepare('SELECT * FROM gifts WHERE user_id=? ORDER BY updated_at DESC').all(account.id); return send(res, 200, { gifts: rows.map(safe) }); }
@@ -124,7 +141,7 @@ function createApp(options = {}) {
       }
       if (!['GET', 'HEAD'].includes(req.method)) throw fail(405, '不支持此操作。');
       const receiver = /^\/g\/[a-f0-9]{48}$/.test(pathname);
-      const files = { '/': ['index.html','text/html'], '/index.html': ['index.html','text/html'], '/assets/stationery/memory-samples-v1.png':['assets/stationery/memory-samples-v1.png','image/png'], '/photo-space.js':['photo-space.js','text/javascript'], '/photo-scenes.js':['photo-scenes.js','text/javascript'], '/photo-scenes.css':['photo-scenes.css','text/css'], '/assets/stationery/sunroom-v1.png':['assets/stationery/sunroom-v1.png','image/png'], '/stationery.js':['stationery.js','text/javascript'], '/stationery.css':['stationery.css','text/css'], '/assets/stationery/envelopes-v1.png':['assets/stationery/envelopes-v1.png','image/png'], '/assets/stationery/ginkgo-v1.png':['assets/stationery/ginkgo-v1.png','image/png'], '/studio.js': ['studio.js','text/javascript'], '/studio.css': ['studio.css','text/css'], '/tree-webgl.js': ['tree-webgl.js','text/javascript'], '/tree-webgl.css': ['tree-webgl.css','text/css'], '/gift-effects.js': ['gift-effects.js','text/javascript'], '/gift-effects.css': ['gift-effects.css','text/css'], '/account.js': ['account.js','text/javascript'], '/account.css': ['account.css','text/css'] };
+      const files = { '/': ['index.html','text/html'], '/index.html': ['index.html','text/html'], '/assets/stationery/memory-samples-v1.png':['assets/stationery/memory-samples-v1.png','image/png'], '/assets/stationery/wax-seals-v1.png':['assets/stationery/wax-seals-v1.png','image/png'], '/photo-space.js':['photo-space.js','text/javascript'], '/photo-scenes.js':['photo-scenes.js','text/javascript'], '/photo-scenes.css':['photo-scenes.css','text/css'], '/assets/stationery/sunroom-v1.png':['assets/stationery/sunroom-v1.png','image/png'], '/stationery.js':['stationery.js','text/javascript'], '/stationery.css':['stationery.css','text/css'], '/assets/stationery/envelopes-v1.png':['assets/stationery/envelopes-v1.png','image/png'], '/assets/stationery/ginkgo-v1.png':['assets/stationery/ginkgo-v1.png','image/png'], '/studio.js': ['studio.js','text/javascript'], '/studio.css': ['studio.css','text/css'], '/tree-webgl.js': ['tree-webgl.js','text/javascript'], '/tree-webgl.css': ['tree-webgl.css','text/css'], '/gift-effects.js': ['gift-effects.js','text/javascript'], '/gift-effects.css': ['gift-effects.css','text/css'], '/account.js': ['account.js','text/javascript'], '/account.css': ['account.css','text/css'] };
       let entry = receiver ? files['/'] : files[pathname]; if(pathname.startsWith('/vendor/three/')&&pathname.endsWith('.js')){const root=path.resolve(__dirname,'vendor/three');const file=path.resolve(__dirname,'.'+pathname);if(file.startsWith(root+path.sep)&&fs.existsSync(file))entry=[path.relative(__dirname,file),'text/javascript'];}
       if (!entry) throw fail(404, '页面不存在。');
       let data = fs.readFileSync(path.join(__dirname, entry[0]));

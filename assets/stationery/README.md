@@ -30,3 +30,8 @@ Use case: photorealistic-natural. Production website gift asset. ONE single auth
 
 - sunroom-v1.png：空白午后灰泥墙、叶影、木色窗台与亚麻帘，作为绳挂照片墙背景。生成要求：Photorealistic editorial interior background for an interactive hanging photograph wall website, empty warm ivory limewashed plaster wall, soft golden late afternoon window light, shadows of leaves, pale oak ledge, fern leaves and gauzy linen curtain at edges, no photos, frames, strings, text, people or watermark.
 - memory-samples-v1.png：严格 3×3 九格摄影图集，浏览器转为九张示例照片；18 张陈列中有重复。生成要求：Nine equal square photographic cells, edge to edge, no gutters or text; green leaves in morning sun, coastal sunset, coffee and book, pink cosmos field, quiet old-town summer lane, forest light, blue-hour ocean, cherries picnic, mountains through train window; realistic soft film tones, no people, brands or watermarks.
+
+
+## 发布候选：火漆素材
+
+内置图像生成工具创建并保存 wax-seals-v1.png，透明 3×2 图集。最终提示词：Production transparent texture atlas of SIX exquisite realistic wax seals for a premium letter website. Strict grid 3 columns x 2 rows, equal square cells, each seal centered with transparent margin, same scale, genuinely transparent background. Photorealistic macro, soft upper-left light, thick organic irregular round rims, concentric embossed ring, botanical relief, pearlescent wax. No lettering or monograms. Row1 dusty rose lily; ivory pearl bow and laurel; burgundy laurel and stars. Row2 sage lily of valley; lavender butterfly and flowers; champagne gold rose and leaves. Around 85% cell coverage. No paper, table, people, outside ribbons, logos or watermark.

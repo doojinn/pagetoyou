@@ -4,6 +4,8 @@ const path = require('node:path');
 const fs = require('node:fs');
 const { createApp } = require('../backend.cjs');
 
+fs.mkdirSync(path.join(__dirname,'../.document-work'),{recursive:true});
+
 test('accounts, ownership, publication snapshots, revocation and persistence', async () => {
   const dataDir = fs.mkdtempSync(path.join(__dirname, '../.document-work/backend-test-'));
   let app = createApp({ dataDir });
