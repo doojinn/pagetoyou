@@ -1,0 +1,4 @@
+const http=require('node:http');const fs=require('node:fs');const path=require('node:path');
+const port=Number(process.env.PORT)||4175;
+const files={'/':['index.html','text/html; charset=utf-8'],'/index.html':['index.html','text/html; charset=utf-8'],'/studio.js':['studio.js','text/javascript; charset=utf-8'],'/studio.css':['studio.css','text/css; charset=utf-8']};
+http.createServer((req,res)=>{const entry=files[(req.url||'/').split('?')[0]];if(!entry){res.writeHead(404);res.end('Not found');return;}fs.readFile(path.join(__dirname,entry[0]),(err,data)=>{if(err){res.writeHead(500);res.end('Unable to read file');return;}res.setHeader('Content-Type',entry[1]);res.setHeader('Cache-Control','no-store');res.end(data);});}).listen(port,'127.0.0.1',()=>console.log(`Pagetoyou: http://127.0.0.1:${port}`));
