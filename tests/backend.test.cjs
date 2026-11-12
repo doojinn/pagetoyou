@@ -22,7 +22,7 @@ test('accounts, ownership, publication snapshots, revocation and persistence', a
     assert.equal((await request('/api/auth/login', 'POST', { username: 'alice', password: 'wrong-password' })).status, 401);
     const b = await request('/api/auth/register', 'POST', { username: 'bob', displayName: '小博', password: 'test-password-456' });
     const bob = b.cookie;
-    const gift = { kind: 'words', title: '原来的礼物', author: '阿梨', words: '最初的祝福', photos: [], theme: 'forest', zoom: 85, transition: 'fade' };
+    const gift = { kind: 'words', title: '原来的礼物', author: '阿梨', words: '最初的祝福', photos: [], design: {background:'midnight',font:'kai',opening:'cord',paper:'vintage',tree:'sakura',color:'#e7bc61',glow:65,ending:'愿你热爱',music:''}, theme: 'forest', zoom: 85, transition: 'fade' };
     assert.equal((await request('/api/gifts', 'POST', { gift }, alice, { Origin: 'https://bad.example' })).status, 403);
     assert.equal((await request('/api/gifts', 'POST', { gift }, alice, { 'X-Pgy-Request': '' })).status, 403);
     const saved = await request('/api/gifts', 'POST', { gift }, alice);
@@ -30,7 +30,7 @@ test('accounts, ownership, publication snapshots, revocation and persistence', a
     const id = saved.body.gift.id;
     for (const [method, suffix, body] of [['GET', '', undefined], ['DELETE', '', undefined], ['PUT', '', { gift, revision: 1 }], ['POST', '/publish', { revision: 1 }], ['POST', '/stop', {}]]) assert.equal((await request('/api/gifts/' + id + suffix, method, body, bob)).status, 404);
     const published = await request('/api/gifts/' + id + '/publish', 'POST', { revision: 1 }, alice);
-    assert.equal(published.status, 200);
+    assert.equal(published.status, 200); assert.equal((await request('/api/public/' + published.body.gift.token)).body.gift.design.opening,'cord');
     const token = published.body.gift.token;
     assert.equal((await request('/api/public/' + token)).body.gift.words, '最初的祝福');
     const edits = await Promise.all([request('/api/gifts/' + id, 'PUT', { gift: { ...gift, words: '新祝福' }, revision: 1 }, alice), request('/api/gifts/' + id, 'PUT', { gift: { ...gift, words: '新祝福' }, revision: 1 }, alice)]);
@@ -60,3 +60,4 @@ test('accounts, ownership, publication snapshots, revocation and persistence', a
     assert.equal((await request('/api/auth/me', 'GET', undefined, login.cookie)).status, 401);
   } finally { await new Promise(resolve => app.close(resolve)); }
 });
+

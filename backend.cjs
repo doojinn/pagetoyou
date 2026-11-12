@@ -36,6 +36,13 @@ function validateGift(input) {
   }
   if (['tree', 'gallery', 'slideshow', 'album', 'photo3d', 'chat'].includes(gift.kind) && !gift.photos.length) throw fail(400, '此模板至少需要一张照片。');
   if (gift.kind === 'words' && !gift.words.trim()) throw fail(400, '请填写祝福文字。');
+  if(input.design){
+    const d=input.design;const allowed={background:['midnight','rose','forest','paper','aurora'],font:['serif','sans','kai','elegant'],opening:['wax','cord','ribbon'],paper:['cream','vintage','botanical','noir'],tree:['christmas','sakura','willow']};
+    gift.design={};for(const [key,values] of Object.entries(allowed)){if(!values.includes(d[key]))throw fail(400,'礼物样式无效。');gift.design[key]=d[key];}
+    if(typeof d.color!=='string'||!/^#[0-9a-fA-F]{6}$/.test(d.color)||!Number.isFinite(d.glow)||d.glow<0||d.glow>100)throw fail(400,'光效参数无效。');
+    gift.design.color=d.color;gift.design.glow=d.glow;gift.design.ending=str(d.ending,300);gift.design.music='';
+    if(d.music){if(typeof d.music!=='string'||d.music.length>2900000||!/^data:audio\/(mpeg|wav|ogg);base64,[A-Za-z0-9+/]+=*$/.test(d.music))throw fail(400,'音乐格式无效或超过限制。');gift.design.music=d.music;}
+  }
   return gift;
 }
 
@@ -112,7 +119,7 @@ function createApp(options = {}) {
       }
       if (!['GET', 'HEAD'].includes(req.method)) throw fail(405, '不支持此操作。');
       const receiver = /^\/g\/[a-f0-9]{48}$/.test(pathname);
-      const files = { '/': ['index.html','text/html'], '/index.html': ['index.html','text/html'], '/studio.js': ['studio.js','text/javascript'], '/studio.css': ['studio.css','text/css'], '/account.js': ['account.js','text/javascript'], '/account.css': ['account.css','text/css'] };
+      const files = { '/': ['index.html','text/html'], '/index.html': ['index.html','text/html'], '/studio.js': ['studio.js','text/javascript'], '/studio.css': ['studio.css','text/css'], '/gift-effects.js': ['gift-effects.js','text/javascript'], '/gift-effects.css': ['gift-effects.css','text/css'], '/account.js': ['account.js','text/javascript'], '/account.css': ['account.css','text/css'] };
       const entry = receiver ? files['/'] : files[pathname];
       if (!entry) throw fail(404, '页面不存在。');
       let data = fs.readFileSync(path.join(__dirname, entry[0]));
@@ -124,4 +131,5 @@ function createApp(options = {}) {
   return server;
 }
 module.exports = { createApp, validateGift };
+
 
