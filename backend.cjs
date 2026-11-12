@@ -119,8 +119,8 @@ function createApp(options = {}) {
       }
       if (!['GET', 'HEAD'].includes(req.method)) throw fail(405, '不支持此操作。');
       const receiver = /^\/g\/[a-f0-9]{48}$/.test(pathname);
-      const files = { '/': ['index.html','text/html'], '/index.html': ['index.html','text/html'], '/studio.js': ['studio.js','text/javascript'], '/studio.css': ['studio.css','text/css'], '/gift-effects.js': ['gift-effects.js','text/javascript'], '/gift-effects.css': ['gift-effects.css','text/css'], '/account.js': ['account.js','text/javascript'], '/account.css': ['account.css','text/css'] };
-      const entry = receiver ? files['/'] : files[pathname];
+      const files = { '/': ['index.html','text/html'], '/index.html': ['index.html','text/html'], '/studio.js': ['studio.js','text/javascript'], '/studio.css': ['studio.css','text/css'], '/tree-webgl.js': ['tree-webgl.js','text/javascript'], '/tree-webgl.css': ['tree-webgl.css','text/css'], '/gift-effects.js': ['gift-effects.js','text/javascript'], '/gift-effects.css': ['gift-effects.css','text/css'], '/account.js': ['account.js','text/javascript'], '/account.css': ['account.css','text/css'] };
+      let entry = receiver ? files['/'] : files[pathname]; if(pathname.startsWith('/vendor/three/')&&pathname.endsWith('.js')){const root=path.resolve(__dirname,'vendor/three');const file=path.resolve(__dirname,'.'+pathname);if(file.startsWith(root+path.sep)&&fs.existsSync(file))entry=[path.relative(__dirname,file),'text/javascript'];}
       if (!entry) throw fail(404, '页面不存在。');
       let data = fs.readFileSync(path.join(__dirname, entry[0]));
       if (receiver) { data = Buffer.from(data.toString('utf8').replace('<head>', '<head><base href="/">')); res.setHeader('X-Robots-Tag','noindex, nofollow'); }
@@ -131,5 +131,6 @@ function createApp(options = {}) {
   return server;
 }
 module.exports = { createApp, validateGift };
+
 
 
