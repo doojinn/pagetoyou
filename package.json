@@ -1,10 +1,10 @@
 {
   "name": "pagetoyou",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "private": true,
   "description": "予页互动网页礼物创作与账号发布体验版",
   "engines": { "node": ">=24" },
-  "scripts": { "start": "node --env-file-if-exists=.env server.cjs", "check": "node --check stationery.js && node --check gift-effects.js && node --check studio.js && node --check account.js && node --check backend.cjs && node --check server.cjs", "test": "node --test tests/backend.test.cjs tests/stationery.test.cjs" }
+  "scripts": { "start": "node --env-file-if-exists=.env server.cjs", "check": "node --check photo-scenes.js && node --check photo-space.js && node --check stationery.js && node --check gift-effects.js && node --check studio.js && node --check account.js && node --check backend.cjs && node --check server.cjs", "test": "node --test tests/backend.test.cjs tests/stationery.test.cjs" }
 }
 
 

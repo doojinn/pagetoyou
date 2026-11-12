@@ -24,3 +24,9 @@ Use case: photorealistic-natural. Production website gift asset. ONE single auth
 - [Imagine DIY：植物花纸信封](https://imaginediy.co.uk/products/aster-floral-handmade-paper-and-envelope-set)
 
 当前开封是分层动画，包含移印、解绳、翻舌和抽信；不包含真实纸张形变、绳索物理、撕裂或声音模拟。后续继续精修时保持首帧与打开后的纸张位置一致，避免完整封面图片直接变成内容页。
+
+
+## v0.7 补充素材（内置图像生成工具）
+
+- sunroom-v1.png：空白午后灰泥墙、叶影、木色窗台与亚麻帘，作为绳挂照片墙背景。生成要求：Photorealistic editorial interior background for an interactive hanging photograph wall website, empty warm ivory limewashed plaster wall, soft golden late afternoon window light, shadows of leaves, pale oak ledge, fern leaves and gauzy linen curtain at edges, no photos, frames, strings, text, people or watermark.
+- memory-samples-v1.png：严格 3×3 九格摄影图集，浏览器转为九张示例照片；18 张陈列中有重复。生成要求：Nine equal square photographic cells, edge to edge, no gutters or text; green leaves in morning sun, coastal sunset, coffee and book, pink cosmos field, quiet old-town summer lane, forest light, blue-hour ocean, cherries picnic, mountains through train window; realistic soft film tones, no people, brands or watermarks.
