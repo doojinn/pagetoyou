@@ -1,0 +1,6 @@
+.document-work/
+node_modules/
+.env
+.env.*
+!.env.example
+*.log
