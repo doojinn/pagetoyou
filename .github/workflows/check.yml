@@ -13,5 +13,7 @@ jobs:
         with:
           node-version: 24
           package-manager-cache: false
-      - run: npm run check
-      - run: npm test
+      - run: npm install --global pnpm@11.25.0
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - run: pnpm run check
+      - run: pnpm test

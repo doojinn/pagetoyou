@@ -1,11 +1,15 @@
 [build]
-  command = "node scripts/build-netlify.cjs"
+  command = "pnpm run build:netlify"
   publish = "dist"
 
 [build.environment]
   NODE_VERSION = "24"
+  PNPM_VERSION = "11.25.0"
 
-# Published gift routes are reserved for the upcoming cloud API integration.
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
 [[redirects]]
   from = "/g/:token"
   to = "/index.html"
