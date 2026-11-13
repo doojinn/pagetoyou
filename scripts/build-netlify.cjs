@@ -4,4 +4,5 @@ const files=['index.html','studio.js','studio.css','cloud-client.js','account.js
 for(const file of files)fs.copyFileSync(path.join(root,file),path.join(target,file));
 fs.writeFileSync(path.join(target,'index.html'),fs.readFileSync(path.join(root,'index.html'),'utf8').replace('<head>','<head><base href="/">'));
 for(const folder of ['assets','vendor'])fs.cpSync(path.join(root,folder),path.join(target,folder),{recursive:true,filter:src=>!src.endsWith('.md')});
-console.log('Static assets prepared in dist; account and publication APIs require a cloud backend.');
+const functionsTarget=path.join(root,'.netlify','generated-functions');fs.mkdirSync(functionsTarget,{recursive:true});require('esbuild').buildSync({entryPoints:[path.join(root,'netlify/functions/api.mjs')],bundle:true,platform:'node',target:'node24',format:'esm',outfile:path.join(functionsTarget,'api.mjs'),external:['pg-native','bufferutil','utf-8-validate']});
+console.log('Static assets and self-contained Netlify function prepared.');

@@ -1,6 +1,6 @@
 {
   "name": "pagetoyou",
-  "version": "1.1.0-netlify.1",
+  "version": "1.1.0-netlify.2",
   "private": true,
   "description": "予页互动网页礼物创作与账号发布体验版",
   "engines": {
@@ -11,14 +11,16 @@
     "check": "node --check tree-webgl.js && node --check photo-scenes.js && node --check photo-space.js && node --check stationery.js && node --check gift-effects.js && node --check studio.js && node --check account.js && node --check backend.cjs && node --check server.cjs && node --check cloud/api.cjs && node --check cloud-client.js && node --check netlify/functions/api.mjs",
     "test": "node --test tests/backend.test.cjs tests/stationery.test.cjs tests/recovery.test.cjs tests/cloud.test.cjs",
     "build:netlify": "node scripts/build-netlify.cjs",
-    "test:cloud": "node --test tests/cloud.test.cjs"
+    "test:cloud": "node --test tests/cloud.test.cjs",
+    "check:netlify-bundle": "node scripts/check-netlify-bundle.cjs"
   },
   "dependencies": {
     "@netlify/blobs": "^11.1.9",
     "@netlify/database": "^2.0.3"
   },
   "devDependencies": {
-    "@electric-sql/pglite": "0.2.17"
+    "@electric-sql/pglite": "0.2.17",
+    "esbuild": "^0.28.2"
   },
   "packageManager": "pnpm@11.25.0"
 }

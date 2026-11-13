@@ -1,6 +1,8 @@
 # 予页 · Netlify 专用版本
 
-版本：v1.1.0-netlify.1；分支：deployment/netlify。通用 Node / SQLite 版本保留在 master 与 v1.0.0-rc.2 标签，不合并覆盖。
+版本：v1.1.0-netlify.2；分支：deployment/netlify。通用 Node / SQLite 版本保留在 master 与 v1.0.0-rc.2 标签，不合并覆盖。
+
+线上站点：https://pagetoyou-doojinn.netlify.app 。
 
 本分支使用 Netlify Functions、Postgres 和 Blobs，照片／背景／音乐先上传，礼物仅保存引用。云端账号是独立数据库，不会自动上传本机测试账号与私人照片。未来更换平台可复用 cloud/api.cjs 的业务逻辑，替换注入的数据库连接池、文件存储接口及函数入口。
 
@@ -10,9 +12,9 @@
 
 # 予页 pagetoyou
 
-本机完整体验版 v1.0.0-rc.2：统一礼物模板库、真实账号、个人中心和发布快照。照片树现使用真实 WebGL 金属球体、照片实体、环境反射与泛光，可聚合为树或散开为照片星云。尚未部署公网。
+本机完整体验版 v1.0.0-rc.2：统一礼物模板库、真实账号、个人中心和发布快照。照片树现使用真实 WebGL 金属球体、照片实体、环境反射与泛光，可聚合为树或散开为照片星云。该段描述原始本机版本；当前 Netlify 版本已上线，入口见本文顶部。
 
-私有仓库：[doojinn/pagetoyou](https://github.com/doojinn/pagetoyou)。本版为发布候选；公网应用尚未部署。完整验收记录见 [RELEASE-CHECKLIST.md](RELEASE-CHECKLIST.md)，部署说明见 [DEPLOYMENT.md](DEPLOYMENT.md)。
+私有仓库：[doojinn/pagetoyou](https://github.com/doojinn/pagetoyou)。原始通用版本为发布候选；当前 Netlify 部署见本文顶部。完整验收记录见 [RELEASE-CHECKLIST.md](RELEASE-CHECKLIST.md)，部署说明见 [DEPLOYMENT.md](DEPLOYMENT.md)。
 
 ## 运行
 

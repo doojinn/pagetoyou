@@ -7,7 +7,7 @@
   PNPM_VERSION = "11.25.0"
 
 [functions]
-  directory = "netlify/functions"
+  directory = ".netlify/generated-functions"
   node_bundler = "esbuild"
 
 [[redirects]]
@@ -21,3 +21,7 @@
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "no-referrer"
     X-Frame-Options = "DENY"
+[[headers]]
+  for = "/g/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"

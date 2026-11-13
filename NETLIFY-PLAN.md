@@ -1,6 +1,6 @@
 # Netlify 专用版本
 
-版本 v1.1.0-netlify.1，独立分支 deployment/netlify。原通用版本保持在 master / v1.0.0-rc.2。
+版本 v1.1.0-netlify.2，独立分支 deployment/netlify。原通用版本保持在 master / v1.0.0-rc.2。
 
 ## 架构
 
@@ -30,7 +30,7 @@ cloud.test.cjs 使用内嵌 Postgres（PGlite）和独立文件存储替身，�
 
 控制台如关联 GitHub，生产分支必须设为 deployment/netlify，构建命令 pnpm run build:netlify，发布目录 dist。配置中无硬编码平台网址，分享地址来自当前 HTTPS 请求。
 
-平台构建和实际公网验收需要完成部署工具登录。本次授权票据仍待批准，尚未创建或发布公网站点。实际站点网址将以部署结果为准。
+生产站点：https://pagetoyou-doojinn.netlify.app 。Netlify 项目 pagetoyou-doojinn，项目 ID faa9b624-d712-4dfa-beb1-0f2893962d5a。已完成平台数据库迁移、公开访问和函数部署，注册、保存、发布、匿名查看及停止分享已通过实际公网接口测试；完整浏览器验收结果见本次交付记录。
 
 ## 更换平台
 
@@ -39,3 +39,8 @@ cloud.test.cjs 使用内嵌 Postgres（PGlite）和独立文件存储替身，�
 参考：
 https://docs.netlify.com/build/data-and-storage/netlify-database/
 https://docs.netlify.com/build/data-and-storage/netlify-blobs/
+
+
+## Windows 部署兼容
+
+Windows 上 pnpm 的依赖链接不能直接打进 NFT 包后在 Linux 上运行。本版先用 esbuild 把 API 与依赖预打成自包含 ESM，生成到忽略的 .netlify/generated-functions；再交由 Netlify 包装运行时。不要自行重复声明 __filename / __dirname，Netlify 会注入这些变量。pnpm-workspace.yaml 仅批准 esbuild 的构建脚本。平台构建后可运行 pnpm run check:netlify-bundle，在隔离目录验证实际函数包能导入。
