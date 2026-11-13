@@ -1,0 +1,19 @@
+[build]
+  command = "node scripts/build-netlify.cjs"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "24"
+
+# Published gift routes are reserved for the upcoming cloud API integration.
+[[redirects]]
+  from = "/g/:token"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer"
+    X-Frame-Options = "DENY"
