@@ -18,6 +18,9 @@ test('optional packaging and independent wax seal survive publication validation
 });
 
 test('snow and Christmas ornaments survive validation, including explicit off choices',()=>{
+ const framed=validateGift({...gift,kind:'leaf',design:{...design,photoFrame:'silver',snowLevel:'heavy'}});
+ assert.equal(framed.design.photoFrame,'silver');assert.equal(framed.design.snowLevel,'heavy');
+ for(const invalid of [{photoFrame:'../asset'},{snowLevel:100}])assert.throws(()=>validateGift({...gift,kind:'leaf',design:{...design,...invalid}}),{status:400});
  const tree={...gift,kind:'tree',photos:[{src:'data:image/png;base64,iVBORw0KGgo='}]};
  for(const snow of [true,false])for(const treeGifts of [true,false])for(const ornamentStyle of ['baubles','crystals','mixed']){
   const saved=validateGift({...tree,design:{...design,snow,treeGifts,ornamentStyle}});

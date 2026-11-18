@@ -14,7 +14,7 @@ const assert=require('node:assert/strict');
   await p.locator('.pg-header-trial').click();await p.locator('.envelope-skip').click();
   assert.deepEqual(await p.locator('.tile-heading h2').allTextContents().then(x=>x.slice(0,6)),['信封贺卡','3D 照片树','3D 照片长廊','送你一片叶子','3D 照片空间','3D 文字空间']);
   await p.getByRole('button',{name:'选择3D 照片树',exact:true}).click();await p.waitForSelector('.gift-webgl-canvas[data-webgl=ready]');await p.waitForSelector('.scene-loading',{state:'detached'});
-  await p.locator('[data-design=snow]').uncheck();assert.equal(await p.locator('.gift-snow').count(),0);await p.locator('[data-design=snow]').check();assert.equal(await p.locator('.gift-snow i').count(),32);
+  await p.locator('[data-design=snow]').uncheck();assert.equal(await p.locator('.gift-snow').count(),0);await p.locator('[data-design=snow]').check();assert.equal(await p.locator('.gift-snow i').count(),36);
   for(const style of ['baubles','crystals','mixed']){await p.locator('[data-design=ornamentStyle]').selectOption(style);await p.waitForSelector('.scene-loading',{state:'detached'});assert.equal(await p.evaluate(()=>window.PagetoyouStudio.current().design.ornamentStyle),style);}
   await p.locator('[data-design=treeGifts]').uncheck();await p.waitForSelector('.scene-loading',{state:'detached'});await p.locator('[data-design=treeGifts]').check();await p.waitForSelector('.scene-loading',{state:'detached'});
   await p.getByRole('button',{name:'散开 · 照片星云',exact:true}).click();await p.waitForTimeout(700);assert.ok(await p.evaluate(()=>window.PagetoyouTree3D.metrics().distance)<5);assert.ok(await p.locator('.preview-wrap.full').count());
