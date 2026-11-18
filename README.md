@@ -1,8 +1,10 @@
-> 当前为本地待体验版 v1.6.0-local.1：http://127.0.0.1:4193 。线上仍为 v1.5.0-netlify.1，本轮未部署。上一轮部署结果见 RELEASE-v1.5.0-netlify.1.md。
+> 当前为本地待体验版 v1.7.0-local.1：http://127.0.0.1:4193 。线上仍为 v1.5.0-netlify.1，本轮未部署。上一轮部署结果见 RELEASE-v1.5.0-netlify.1.md。
 
 # 予页 · Netlify 专用版本
 
-当前本地分支 codex/tree-memories-v1.6，版本 v1.6.0-local.1；生产分支 deployment/netlify 保留 v1.5.0-netlify.1。原本地体验分支及标签继续保留；通用 Node / SQLite 版本位于 master 与 v1.0.0-rc.2 标签。
+当前本地分支 codex/catalog-art-v1.7，版本 v1.7.0-local.1；生产分支 deployment/netlify 保留 v1.5.0-netlify.1。原本地体验分支及标签继续保留；通用 Node / SQLite 版本位于 master 与 v1.0.0-rc.2 标签。
+
+模板选择页的十张封面已改为独立制作的概念静物与空间插画，采用统一书刊排版，图片延迟加载，手机上调整构图比例。素材位于 [assets/catalog-v17](assets/catalog-v17/README.md)，内有生成方式、提示词方案与尺寸说明。
 
 本轮增加照片收纳盒：缩略图、文件名、逐张配文、排序和删除；可删除全部样例或清空照片。照片树默认无边框，另有原创胡桃木纹、银质细框和拍立得相纸。飘雪可关闭或选择轻雪/中雪/大雪。圣诞树聚合时照片缩小并藏入树内，展开后放大，显示相应操作提示。照片与设置沿用既有本地草稿/账号保存，不另建收费媒体库。
 
