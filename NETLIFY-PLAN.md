@@ -1,8 +1,8 @@
-> 当前为本地待体验版本 v1.5.0-local.1，尚未部署或推送。线上仍为 v1.2.0-netlify.2；本地运行地址 http://127.0.0.1:4193 。
+> 当前上线分支版本 v1.5.0-netlify.1。站点 https://pagetoyou-doojinn.netlify.app ，本次发布及公网验收结果见 RELEASE-v1.5.0-netlify.1.md。
 
 # Netlify 专用版本
 
-本地版本 v1.5.0-local.1 位于 codex/experience-v1.5；生产仍使用 deployment/netlify。原通用版本保持在 master / v1.0.0-rc.2。本轮执行构建只用于本地检查，不执行发布。
+生产版本 v1.5.0-netlify.1 使用 deployment/netlify；本地版本 v1.5.0-local.1 保留在 codex/experience-v1.5。原通用版本保持在 master / v1.0.0-rc.2。用户已授权将本地验收版本部署到既有 Netlify 站点，使用原账号库与媒体存储。
 
 ## 架构
 
