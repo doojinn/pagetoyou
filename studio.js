@@ -8,7 +8,7 @@ const q=s=>host.querySelector(s),all=s=>[...host.querySelectorAll(s)];
 const templates=[
 {id:'leaf',title:'送你一片叶子',en:'A LITTLE PIECE OF AUTUMN',desc:'把一片带着叶脉的银杏寄给你。轻触翻面，读背面的悄悄话。',tags:['文字','互动'],cover:'leaf'},
 {id:'parchment',title:'羊皮纸书信',en:'WORDS THAT FEEL LIKE HOME',desc:'毛边、旧纸与墨迹，把一封长信慢慢展开。',tags:['贺卡','文字'],cover:'parchment'},
-{id:'card',title:'信封贺卡',en:'A LETTER TO YOU',desc:'拆开信封，读一封专属的信。套用设计，也能自由布置。',tags:['贺卡','文字'],cover:'card',status:'编辑原型'},
+{id:'card',title:'信封贺卡',en:'A LETTER TO YOU',desc:'六套花笺与十二款信封。亲手拆开，再读一封专属的信。',tags:['贺卡','文字'],cover:'card',status:'纸品新作'},
 {id:'gallery',title:'滑动照片长廊',en:'A WALK THROUGH MEMORIES',desc:'多排相纸与配文挂在弧形细绳上，拖动浏览，点击重温。',tags:['照片'],cover:'gallery'},
 {id:'tree',title:'3D 照片树',en:'MEMORIES TAKE ROOT',desc:'让回忆沿树生长，拖动旋转，从不同角度重温照片。',tags:['照片','3D'],cover:'tree'},
 {id:'slideshow',title:'幻灯照片故事',en:'OUR STORY IN MOTION',desc:'像一份小小的 PPT，让照片带着过渡效果依次出现。',tags:['照片'],cover:'slides'},

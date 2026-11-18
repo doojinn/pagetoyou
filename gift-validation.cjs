@@ -36,6 +36,8 @@ function validateGift(input, options={}) {
     gift.design={};for(const [key,values] of Object.entries(allowed)){if(!values.includes(d[key]))throw fail(400,'礼物样式无效。');gift.design[key]=d[key];}
     if(typeof d.color!=='string'||!/^#[0-9a-fA-F]{6}$/.test(d.color)||!Number.isFinite(d.glow)||d.glow<0||d.glow>100)throw fail(400,'光效参数无效。');
     if(d.envelope!==undefined){if(!['ivory','blue','sage','rose','meadow','hydrangea','parchment','mulberry','baroque','love','linen','blush'].includes(d.envelope))throw fail(400,'信封款式无效。');gift.design.envelope=d.envelope;}
+    for(const [key,values] of Object.entries({suite:['olive','rose-garden','blue-porcelain','ribbon-stripe','midnight-gold','pressed-flower'],liner:['matching','plain','stripe'],stamp:['botanical','postmark','none']})){if(d[key]!==undefined){if(!values.includes(d[key]))throw fail(400,'信笺套系设置无效。');gift.design[key]=d[key];}}
+    if(d.recipient!==undefined)gift.design.recipient=str(d.recipient,30).trim();
     if(d.seal!==undefined){if(typeof d.seal!=='string'||!/^#[0-9a-fA-F]{6}$/.test(d.seal))throw fail(400,'火漆颜色无效。');gift.design.seal=d.seal;}
     for(const [key,values] of Object.entries({sealStyle:['rose','pearl','crimson','sage','violet','gold'],galleryStyle:['wall','ribbon','scrapbook'],photoIntro:['journey','explore']})){if(d[key]!==undefined){if(!values.includes(d[key]))throw fail(400,'照片场景样式无效。');gift.design[key]=d[key];}}
     if(d.backgroundOpacity!==undefined){if(!Number.isFinite(d.backgroundOpacity)||d.backgroundOpacity<20||d.backgroundOpacity>100)throw fail(400,'背景可见度无效。');gift.design.backgroundOpacity=d.backgroundOpacity;}

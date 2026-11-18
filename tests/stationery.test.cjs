@@ -4,4 +4,12 @@ const gift={title:'见字如面',author:'朋友',words:'一封信',photos:[],the
 test('material gifts preserve the chosen envelope and seal through validation',()=>{for(const kind of ['leaf','parchment']){const saved=validateGift({...gift,kind});assert.equal(saved.design.envelope,'mulberry');assert.equal(saved.design.seal,'#ab7650');assert.equal(saved.kind,kind);}assert.throws(()=>validateGift({...gift,kind:'leaf',design:{...design,envelope:'../../other'}}),{status:400});assert.throws(()=>validateGift({...gift,kind:'parchment',design:{...design,seal:'url(https://bad)'}}),{status:400});});
 test('earlier gifts without envelope metadata remain valid',()=>{const {envelope,seal,...legacy}=design;assert.equal(validateGift({...gift,kind:'words',design:legacy}).design.opening,'cord');assert.equal(validateGift({...gift,kind:'words',design:undefined}).design,undefined);});
 
+test('coordinated stationery survives save validation without accepting arbitrary asset paths',()=>{
+  const d={...design,suite:'blue-porcelain',liner:'stripe',stamp:'postmark',recipient:'小林'};
+  const saved=validateGift({...gift,kind:'parchment',design:d});
+  assert.deepEqual(Object.fromEntries(['suite','liner','stamp','recipient'].map(k=>[k,saved.design[k]])),{suite:'blue-porcelain',liner:'stripe',stamp:'postmark',recipient:'小林'});
+  for(const key of ['suite','liner','stamp'])assert.throws(()=>validateGift({...gift,kind:'parchment',design:{...d,[key]:'../../private'}}),{status:400});
+  assert.throws(()=>validateGift({...gift,kind:'parchment',design:{...d,recipient:'字'.repeat(31)}}),{status:400});
+});
+
 test('photo scene settings and raster backgrounds are validated',()=>{const src='data:image/png;base64,iVBORw0KGgo=';const saved=validateGift({...gift,kind:'gallery',photos:[{src}],design:{...design,background:'sunroom',backgroundImage:src,backgroundOpacity:80,galleryStyle:'ribbon',photoIntro:'journey'}});assert.equal(saved.design.backgroundImage,src);assert.equal(saved.design.backgroundOpacity,80);assert.throws(()=>validateGift({...gift,kind:'words',design:{...design,backgroundImage:'data:image/svg+xml;base64,PHN2Zz4='}}),{status:400});assert.throws(()=>validateGift({...gift,kind:'words',design:{...design,photoIntro:'bad'}}),{status:400});assert.throws(()=>validateGift({...gift,kind:'words',design:{...design,backgroundOpacity:101}}),{status:400});});
