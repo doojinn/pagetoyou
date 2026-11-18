@@ -20,7 +20,7 @@ const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),asse
   for(const [name,id]of collection){
    await p.getByRole('button',{name:'选择信笺套系：'+name,exact:true}).click();
    const source=await p.locator('.suite-preview-paper').evaluate(n=>getComputedStyle(n).backgroundImage.match(/url\("?(.*?)"?\)/)[1]);
-   assert.equal(await p.evaluate(async url=>(await fetch(url)).status,source),200,'missing artwork '+id);
+   assert.equal(await p.evaluate(async url=>{const r=await fetch(url);if(r.status!==200)return r.status;const blob=await r.blob(),image=await createImageBitmap(blob);const valid=image.width>0&&image.height>0;image.close();return valid?200:0;},source),200,'missing or undecodable artwork '+id);
    assert.equal(await p.locator('.suite-preview-paper').getAttribute('data-suite'),id);
   }
   // A timed, interactive preview must open the actual liner and extract the letter.

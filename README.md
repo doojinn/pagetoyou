@@ -1,6 +1,6 @@
 # 予页 · Netlify 专用版本
 
-版本：v1.2.0-netlify.1；分支：deployment/netlify。通用 Node / SQLite 版本保留在 master 与 v1.0.0-rc.2 标签，不合并覆盖。
+版本：v1.2.0-netlify.2；分支：deployment/netlify。通用 Node / SQLite 版本保留在 master 与 v1.0.0-rc.2 标签，不合并覆盖。
 
 线上站点：https://pagetoyou-doojinn.netlify.app 。
 

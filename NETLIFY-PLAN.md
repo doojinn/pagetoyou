@@ -1,6 +1,6 @@
 # Netlify 专用版本
 
-版本 v1.2.0-netlify.1，独立分支 deployment/netlify。原通用版本保持在 master / v1.0.0-rc.2。
+版本 v1.2.0-netlify.2，独立分支 deployment/netlify。原通用版本保持在 master / v1.0.0-rc.2。
 
 ## 架构
 
