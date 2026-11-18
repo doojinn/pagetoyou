@@ -17,4 +17,14 @@ test('optional packaging and independent wax seal survive publication validation
  assert.throws(()=>validateGift({...gift,kind:'leaf',design:{...design,packaging:'false'}}),{status:400});
 });
 
+test('snow and Christmas ornaments survive validation, including explicit off choices',()=>{
+ const tree={...gift,kind:'tree',photos:[{src:'data:image/png;base64,iVBORw0KGgo='}]};
+ for(const snow of [true,false])for(const treeGifts of [true,false])for(const ornamentStyle of ['baubles','crystals','mixed']){
+  const saved=validateGift({...tree,design:{...design,snow,treeGifts,ornamentStyle}});
+  assert.equal(saved.design.snow,snow);assert.equal(saved.design.treeGifts,treeGifts);assert.equal(saved.design.ornamentStyle,ornamentStyle);
+ }
+ for(const invalid of [{snow:'false'},{treeGifts:1},{ornamentStyle:'unsupported'}])assert.throws(()=>validateGift({...tree,design:{...design,...invalid}}),{status:400});
+ const legacy=validateGift(tree);assert.equal(legacy.design.snow,undefined);assert.equal(legacy.design.ornamentStyle,undefined);
+});
+
 test('photo scene settings and raster backgrounds are validated',()=>{const src='data:image/png;base64,iVBORw0KGgo=';const saved=validateGift({...gift,kind:'gallery',photos:[{src}],design:{...design,background:'sunroom',backgroundImage:src,backgroundOpacity:80,galleryStyle:'ribbon',photoIntro:'journey'}});assert.equal(saved.design.backgroundImage,src);assert.equal(saved.design.backgroundOpacity,80);assert.throws(()=>validateGift({...gift,kind:'words',design:{...design,backgroundImage:'data:image/svg+xml;base64,PHN2Zz4='}}),{status:400});assert.throws(()=>validateGift({...gift,kind:'words',design:{...design,photoIntro:'bad'}}),{status:400});assert.throws(()=>validateGift({...gift,kind:'words',design:{...design,backgroundOpacity:101}}),{status:400});});

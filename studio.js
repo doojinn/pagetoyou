@@ -9,7 +9,7 @@ const templates=[
 {id:'parchment',title:'羊皮纸书信',en:'LETTERS THROUGH TIME',desc:'旧版羊皮纸',tags:['贺卡','文字'],cover:'parchment',hidden:true},
 {id:'leaf',title:'送你一片叶子',en:'A LITTLE PIECE OF AUTUMN',desc:'把一片带着叶脉的银杏寄给你。轻触翻面，读背面的悄悄话。',tags:['文字','互动'],cover:'leaf'},
 {id:'card',title:'信封贺卡',en:'A LETTER TO YOU',desc:'六套花笺与十二款信封。亲手拆开，再读一封专属的信。',tags:['贺卡','文字'],cover:'card',status:'纸品新作'},
-{id:'gallery',title:'滑动照片长廊',en:'A WALK THROUGH MEMORIES',desc:'多排相纸与配文挂在弧形细绳上，拖动浏览，点击重温。',tags:['照片'],cover:'gallery'},
+{id:'gallery',title:'3D 照片长廊',en:'A WALK THROUGH MEMORIES',desc:'多排相纸与配文挂在弧形细绳上，拖动浏览，点击重温。',tags:['照片'],cover:'gallery'},
 {id:'tree',title:'3D 照片树',en:'MEMORIES TAKE ROOT',desc:'让回忆沿树生长，拖动旋转，从不同角度重温照片。',tags:['照片','3D'],cover:'tree'},
 {id:'slideshow',title:'幻灯照片故事',en:'OUR STORY IN MOTION',desc:'像一份小小的 PPT，让照片带着过渡效果依次出现。',tags:['照片'],cover:'slides'},
 {id:'album',title:'电子照片相册',en:'THE DAYS WITH YOU',desc:'翻阅照片与配文，一页一页，收藏平凡日子的闪光。',tags:['照片'],cover:'album'},
@@ -18,6 +18,7 @@ const templates=[
 {id:'cake',title:'互动生日蛋糕',en:'MAKE A LITTLE WISH',desc:'点亮生日的仪式感，点击许愿、熄灭蜡烛，揭晓祝福。',tags:['3D','互动'],cover:'cake'},
 {id:'chat',title:'聊天回忆墙',en:'A THOUSAND LITTLE THINGS',desc:'上传聊天截图，拼成可以浏览、放大的回忆墙。',tags:['照片','文字'],cover:'chat'}
 ];
+const templateOrder=["card","tree","gallery","leaf","photo3d","words","cake","album","slideshow","chat","parchment"];templates.sort((a,b)=>templateOrder.indexOf(a.id)-templateOrder.indexOf(b.id));
 function el(tag,cls,text){const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n;}
 let category='全部',search='',view='catalog',state={kind:'words',title:'愿你被这个世界温柔以待',author:'一直在的朋友',words:'愿你永远热爱\n我们一起去看世界\n所有美好都如期而至\n很高兴认识你\n平凡的日子也闪闪发光\n每一刻都值得珍藏',photos:[],theme:'forest',zoom:85,transition:'fade'},angle=0,tilt=-8,paused=matchMedia('(prefers-reduced-motion: reduce)').matches,index=0,drag=null,last=0,timer=null,playing=false,blown=false,busy=false,photoReturn=null;
 const reduced=matchMedia('(prefers-reduced-motion: reduce)');
