@@ -4,7 +4,7 @@ const assert=require('node:assert/strict');
  const browser=await chromium.launch({executablePath:process.env.QA_BROWSER||undefined,headless:true,args:['--enable-webgl','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
  try{
   const page=await browser.newPage({viewport:{width:1440,height:1050},reducedMotion:'reduce'}),errors=[];
-  page.on('pageerror',e=>errors.push(e.message));await page.goto(process.env.QA_URL||'http://127.0.0.1:4193');
+  page.on('pageerror',e=>errors.push(e.message));await page.goto(process.env.QA_URL||'http://127.0.0.1:4193',{waitUntil:'domcontentloaded',timeout:process.env.QA_URL?90000:30000});
   await page.waitForFunction(()=>window.PagetoyouPhotoSamples&&window.PagetoyouTree3D);
   await page.evaluate(()=>window.PagetoyouStudio.load({kind:'tree',title:'回忆的树',author:'朋友',words:'见字如面',photos:window.PagetoyouPhotoSamples.photos(18),theme:'forest',zoom:85,transition:'fade',design:window.PagetoyouStationery.decorate({background:'midnight',packaging:false})}));
   await page.waitForSelector('.gift-webgl-canvas[data-webgl=ready]');

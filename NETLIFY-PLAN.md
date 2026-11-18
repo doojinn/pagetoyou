@@ -1,4 +1,4 @@
-> 当前上线分支版本 v1.5.0-netlify.1。站点 https://pagetoyou-doojinn.netlify.app ，本次发布及公网验收结果见 RELEASE-v1.5.0-netlify.1.md。
+> v1.5.0-netlify.1 已上线：https://pagetoyou-doojinn.netlify.app ，本次发布及公网验收结果见 RELEASE-v1.5.0-netlify.1.md。
 
 # Netlify 专用版本
 
