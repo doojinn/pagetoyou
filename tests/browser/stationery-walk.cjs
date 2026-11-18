@@ -26,7 +26,7 @@ const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),asse
   // A timed, interactive preview must open the actual liner and extract the letter.
   await p.getByRole('button',{name:'选择信笺套系：蓝瓷花笺',exact:true}).click();
   await p.locator('[aria-label="信封内衬"]').selectOption('stripe');await p.locator('[aria-label="邮局印记"]').selectOption('postmark');
-  await p.locator('[aria-label="收信人名字"]').fill('小林');await p.locator('[data-wax=pearl]').click();await p.locator('.closure-choice select').selectOption('cord');
+  await p.locator('[aria-label="收信人名字"]').fill('小林');await p.locator('.seal-toggle input').check();await p.locator('[data-wax=pearl]').click();await p.locator('.closure-choice select').selectOption('cord');
   await p.locator('.preview-envelope').click();await p.locator('.atelier-preview-dialog .unwrap-action').click();await p.waitForSelector('.atelier-preview-dialog .is-untied');
   await p.locator('.atelier-preview-dialog .unwrap-action').click();await p.waitForSelector('.atelier-preview-dialog .is-unfolding');await p.waitForSelector('.atelier-preview-opened');
   assert.equal(await p.locator('.atelier-preview-opened .atelier-paper').getAttribute('data-suite'),'blue-porcelain');
@@ -45,7 +45,7 @@ const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),asse
    assert.match(await p.locator('#pg-canvas').textContent(),/A LETTER FOR YOU/);
   }
   // Re-selecting a collection uses its coordinated default closure; restore this test's custom seal and cord.
-  await p.locator('#pgy-prototype .change-envelope').click();await p.locator('[data-wax=pearl]').click();await p.locator('.closure-choice select').selectOption('cord');await p.locator('.envelope-choose').click();
+  await p.locator('#pgy-prototype .change-envelope').click();await p.locator('.seal-toggle input').check();await p.locator('[data-wax=pearl]').click();await p.locator('.closure-choice select').selectOption('cord');await p.locator('.envelope-choose').click();
   await p.evaluate(()=>window.PagetoyouCard.load({...window.PagetoyouCard.current(),design:{...window.PagetoyouCard.current().design,backgroundImage:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl6kYAAAAAASUVORK5CYII='}},false));
   assert.equal(await p.locator('.pg-stage').getAttribute('data-suite'),null);
   await p.evaluate(()=>{const g=window.PagetoyouCard.current();delete g.design.backgroundImage;window.PagetoyouCard.load(g,false);});

@@ -12,4 +12,9 @@ test('coordinated stationery survives save validation without accepting arbitrar
   assert.throws(()=>validateGift({...gift,kind:'parchment',design:{...d,recipient:'字'.repeat(31)}}),{status:400});
 });
 
+test('optional packaging and independent wax seal survive publication validation',()=>{
+ for(const packaging of [true,false]){const saved=validateGift({...gift,kind:'leaf',design:{...design,packaging,sealEnabled:false}});assert.equal(saved.design.packaging,packaging);assert.equal(saved.design.sealEnabled,false);}
+ assert.throws(()=>validateGift({...gift,kind:'leaf',design:{...design,packaging:'false'}}),{status:400});
+});
+
 test('photo scene settings and raster backgrounds are validated',()=>{const src='data:image/png;base64,iVBORw0KGgo=';const saved=validateGift({...gift,kind:'gallery',photos:[{src}],design:{...design,background:'sunroom',backgroundImage:src,backgroundOpacity:80,galleryStyle:'ribbon',photoIntro:'journey'}});assert.equal(saved.design.backgroundImage,src);assert.equal(saved.design.backgroundOpacity,80);assert.throws(()=>validateGift({...gift,kind:'words',design:{...design,backgroundImage:'data:image/svg+xml;base64,PHN2Zz4='}}),{status:400});assert.throws(()=>validateGift({...gift,kind:'words',design:{...design,photoIntro:'bad'}}),{status:400});assert.throws(()=>validateGift({...gift,kind:'words',design:{...design,backgroundOpacity:101}}),{status:400});});
