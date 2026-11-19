@@ -1,5 +1,7 @@
 > 当前为本地待体验版 v1.7.0-local.1：http://127.0.0.1:4193 。线上仍为 v1.5.0-netlify.1，本轮未部署。上一轮部署结果见 RELEASE-v1.5.0-netlify.1.md。
 
+切换聊天或交接开发时，先阅读 [PROJECT-HANDOFF.md](PROJECT-HANDOFF.md)，其中包含最新版本、未上线改动、本机运行与数据保护说明。
+
 # 予页 · Netlify 专用版本
 
 当前本地分支 codex/catalog-art-v1.7，版本 v1.7.0-local.1；生产分支 deployment/netlify 保留 v1.5.0-netlify.1。原本地体验分支及标签继续保留；通用 Node / SQLite 版本位于 master 与 v1.0.0-rc.2 标签。
