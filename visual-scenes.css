@@ -30,3 +30,6 @@ body.gift-reader #gift-studio .stage.has-celebration>.scene,body.gift-reader #gi
 #gift-studio .stage.mode-gallery[data-paper] .hanging-note .memory-palette{background:var(--gallery-paper-palette);height:3px;opacity:.75;border-radius:1px}
 #gift-studio .stage.mode-gallery[data-paper] .hanging-memory[data-frame=none]{background-color:var(--gallery-paper,#fbf5e8)!important;background-image:var(--gallery-paper-texture)!important;background-size:cover;padding:8px!important}
 .gallery-paper-help{font:10px/1.8 'Microsoft YaHei',sans-serif;color:#95866f}
+
+.stage.cake-photo-surprise .celebration-message{top:17%;left:18%;right:18%;max-height:18%;font-size:15px;padding:8px 14px;background:#0a123b99;pointer-events:none}
+@media(max-width:650px){.stage.cake-photo-surprise .celebration-message{top:19%;left:10%;right:10%;font-size:12px;padding:6px 10px}}

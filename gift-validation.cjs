@@ -38,7 +38,7 @@ function validateGift(input, options={}) {
     if(typeof d.color!=='string'||!/^#[0-9a-fA-F]{6}$/.test(d.color)||!Number.isFinite(d.glow)||d.glow<0||d.glow>100)throw fail(400,'光效参数无效。');
     if(d.envelope!==undefined){if(!['ivory','blue','sage','rose','meadow','hydrangea','parchment','mulberry','baroque','love','linen','blush'].includes(d.envelope))throw fail(400,'信封款式无效。');gift.design.envelope=d.envelope;}
     for(const [key,values] of Object.entries({suite:['olive','rose-garden','blue-porcelain','ribbon-stripe','midnight-gold','pressed-flower'],liner:['matching','plain','stripe'],stamp:['botanical','postmark','none']})){if(d[key]!==undefined){if(!values.includes(d[key]))throw fail(400,'信笺套系设置无效。');gift.design[key]=d[key];}}
-    for(const key of ['packaging','sealEnabled','snow','treeGifts'])if(d[key]!==undefined){if(typeof d[key]!=='boolean')throw fail(400,'封装设置无效。');gift.design[key]=d[key];}
+    for(const key of ['packaging','sealEnabled','snow','treeGifts','cakePhotos'])if(d[key]!==undefined){if(typeof d[key]!=='boolean')throw fail(400,'封装设置无效。');gift.design[key]=d[key];}
     for(const key of ['letterTitle','letterBody','letterSign'])if(d[key]!==undefined)gift.design[key]=str(d[key],key==='letterBody'?2000:80);
     if(d.recipient!==undefined)gift.design.recipient=str(d.recipient,30).trim();
     if(d.seal!==undefined){if(typeof d.seal!=='string'||!/^#[0-9a-fA-F]{6}$/.test(d.seal))throw fail(400,'火漆颜色无效。');gift.design.seal=d.seal;}

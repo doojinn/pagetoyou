@@ -38,3 +38,5 @@ test('visual scene settings preserve frame structure, space themes, cake palette
  for(const field of ['photoFrame','cakeStyle','renderQuality'])assert.throws(()=>validateGift({...gift,kind:'cake',design:{...design,[field]:'invalid'}}),{status:400});
  assert.equal(validateGift({...gift,kind:'words',design:{...design,color:'#ff4081'}}).design.color,'#ff4081');
 });
+
+test('cake photo surprise is explicitly optional and validated',()=>{for(const cakePhotos of [true,false])assert.equal(validateGift({...gift,kind:'cake',design:{...design,cakePhotos}}).design.cakePhotos,cakePhotos);assert.throws(()=>validateGift({...gift,kind:'cake',design:{...design,cakePhotos:'true'}}),{status:400});});
