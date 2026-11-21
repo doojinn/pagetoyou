@@ -2,6 +2,10 @@
 
 更新时间：2026-11-19。本文面向接手的新聊天/开发助手，优先于旧文档中已经过时的实施状态；遇到差异先核对 Git 和实际文件。
 
+## 最新视觉场景 · 2026-11-21
+
+v2.0.0-local.1 / codex/visual-scenes-v2.0 完成十款相框、三维文字颜色、粒子生日蛋糕与空间背景、画质和设计更新优化。新增 visual-design.js、scene-kit.js、celebration-space.js、visual-scenes.css 已接入本机静态允许列表和发布构建。设计说明 VISUAL-DESIGN-v2.md，专项 tests/browser/visual-scenes-v20.cjs。仍只本地，生产保持 v1.8。用户随后要求移除幻灯/聊天墙新建入口并重构三维可编辑照片书，下一阶段从此版本继续。
+
 ## 最新本地界面 · 2026-11-21
 
 v1.9.0-local.1 / codex/workspace-ui-v1.9 完成信封双页签、礼物编辑三分组、统一保存/预览/送出和手机布局，包含 v1.8.1 字体修复。新增 workspace-ui.js / workspace-ui.css 负责移动原控件分组及布局，不复制编辑状态。两个文件已加入 backend.cjs、scripts/build-netlify.cjs、index.html 与语法检查。浏览器回归需按页签和折叠分组操作，最新专项为 tests/browser/workspace-ui-v19.cjs。当前本地服务 http://127.0.0.1:4194，启动时设置 PORT=4194。尚未部署，线上仍为 v1.8.0-netlify.1。

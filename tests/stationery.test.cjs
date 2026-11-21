@@ -31,3 +31,10 @@ test('snow and Christmas ornaments survive validation, including explicit off ch
 });
 
 test('photo scene settings and raster backgrounds are validated',()=>{const src='data:image/png;base64,iVBORw0KGgo=';const saved=validateGift({...gift,kind:'gallery',photos:[{src}],design:{...design,background:'sunroom',backgroundImage:src,backgroundOpacity:80,galleryStyle:'ribbon',photoIntro:'journey'}});assert.equal(saved.design.backgroundImage,src);assert.equal(saved.design.backgroundOpacity,80);assert.throws(()=>validateGift({...gift,kind:'words',design:{...design,backgroundImage:'data:image/svg+xml;base64,PHN2Zz4='}}),{status:400});assert.throws(()=>validateGift({...gift,kind:'words',design:{...design,photoIntro:'bad'}}),{status:400});assert.throws(()=>validateGift({...gift,kind:'words',design:{...design,backgroundOpacity:101}}),{status:400});});
+
+test('visual scene settings preserve frame structure, space themes, cake palette and quality',()=>{
+ const frames=['none','walnut','silver','polaroid','museum','float','film','deckle','arch','postcard'];for(const photoFrame of frames){const saved=validateGift({...gift,kind:'photo3d',photos:[{src:'data:image/png;base64,iVBORw0KGgo='}],design:{...design,background:'saturn',photoFrame,renderQuality:'high',cakeStyle:'sapphire'}});assert.equal(saved.design.photoFrame,photoFrame);assert.equal(saved.design.background,'saturn');assert.equal(saved.design.renderQuality,'high');}
+ for(const background of ['galaxy','deepblue'])assert.equal(validateGift({...gift,kind:'cake',design:{...design,background,cakeStyle:'rose'}}).design.background,background);
+ for(const field of ['photoFrame','cakeStyle','renderQuality'])assert.throws(()=>validateGift({...gift,kind:'cake',design:{...design,[field]:'invalid'}}),{status:400});
+ assert.equal(validateGift({...gift,kind:'words',design:{...design,color:'#ff4081'}}).design.color,'#ff4081');
+});

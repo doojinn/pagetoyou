@@ -32,7 +32,7 @@ function validateGift(input, options={}) {
   if (['tree', 'gallery', 'slideshow', 'album', 'photo3d', 'chat'].includes(gift.kind) && !gift.photos.length) throw fail(400, '此模板至少需要一张照片。');
   if (gift.kind === 'words' && !gift.words.trim()) throw fail(400, '请填写祝福文字。');
   if(input.design){
-    const d=input.design;const allowed={background:['midnight','rose','forest','paper','aurora','sunroom','linen','sunset','botanical','nebula','brick'],font:['serif','sans','kai','elegant','brush','hand','literary'],opening:['wax','cord','ribbon'],paper:['cream','vintage','botanical','noir'],tree:['christmas','sakura','willow']};
+    const d=input.design;const allowed={background:['midnight','rose','forest','paper','aurora','sunroom','linen','sunset','botanical','nebula','brick','galaxy','saturn','deepblue'],font:['serif','sans','kai','elegant','brush','hand','literary'],opening:['wax','cord','ribbon'],paper:['cream','vintage','botanical','noir'],tree:['christmas','sakura','willow']};
     gift.design={};for(const [key,values] of Object.entries(allowed)){if(!values.includes(d[key]))throw fail(400,'礼物样式无效。');gift.design[key]=d[key];}
     if(typeof d.color!=='string'||!/^#[0-9a-fA-F]{6}$/.test(d.color)||!Number.isFinite(d.glow)||d.glow<0||d.glow>100)throw fail(400,'光效参数无效。');
     if(d.envelope!==undefined){if(!['ivory','blue','sage','rose','meadow','hydrangea','parchment','mulberry','baroque','love','linen','blush'].includes(d.envelope))throw fail(400,'信封款式无效。');gift.design.envelope=d.envelope;}
@@ -41,7 +41,7 @@ function validateGift(input, options={}) {
     for(const key of ['letterTitle','letterBody','letterSign'])if(d[key]!==undefined)gift.design[key]=str(d[key],key==='letterBody'?2000:80);
     if(d.recipient!==undefined)gift.design.recipient=str(d.recipient,30).trim();
     if(d.seal!==undefined){if(typeof d.seal!=='string'||!/^#[0-9a-fA-F]{6}$/.test(d.seal))throw fail(400,'火漆颜色无效。');gift.design.seal=d.seal;}
-    for(const [key,values] of Object.entries({snowLevel:['gentle','normal','heavy'],photoFrame:['none','walnut','silver','polaroid'],ornamentStyle:['baubles','crystals','mixed'],sealStyle:['rose','pearl','crimson','sage','violet','gold'],galleryStyle:['wall','ribbon','scrapbook'],photoIntro:['journey','explore']})){if(d[key]!==undefined){if(!values.includes(d[key]))throw fail(400,'照片场景样式无效。');gift.design[key]=d[key];}}
+    for(const [key,values] of Object.entries({snowLevel:['gentle','normal','heavy'],photoFrame:['none','walnut','silver','polaroid','museum','float','film','deckle','arch','postcard'],cakeStyle:['sapphire','rose','champagne'],renderQuality:['auto','low','high'],ornamentStyle:['baubles','crystals','mixed'],sealStyle:['rose','pearl','crimson','sage','violet','gold'],galleryStyle:['wall','ribbon','scrapbook'],photoIntro:['journey','explore']})){if(d[key]!==undefined){if(!values.includes(d[key]))throw fail(400,'照片场景样式无效。');gift.design[key]=d[key];}}
     if(d.backgroundOpacity!==undefined){if(!Number.isFinite(d.backgroundOpacity)||d.backgroundOpacity<20||d.backgroundOpacity>100)throw fail(400,'背景可见度无效。');gift.design.backgroundOpacity=d.backgroundOpacity;}
     if(d.backgroundImage){const checked=validateGift({kind:'gallery',title:'background',author:'',words:'',photos:[{src:d.backgroundImage,name:'',caption:''}]},options);gift.design.backgroundImage=checked.photos[0].src;}
     gift.design.color=d.color;gift.design.glow=d.glow;gift.design.ending=str(d.ending,300);gift.design.music='';

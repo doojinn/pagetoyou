@@ -15,11 +15,11 @@ const assert=require('node:assert/strict');
   for(const point of points){if(point.x<.08||point.x>.92||point.y<.15||point.y>.73)continue;await page.mouse.click(rect.x+point.x*rect.width,rect.y+point.y*rect.height);if(await page.locator('.cosmos-photo-dialog[open]').count()){opened=true;break;}}
   assert.ok(opened,'a visible photograph must open from the 3D cloud');await page.getByRole('button',{name:'关闭照片',exact:true}).click();
   await page.getByRole('button',{name:'聚合 · 圣诞树',exact:true}).click();await page.waitForSelector('.gift-webgl-canvas[data-mode=tree]');
-  await page.locator('#gift-studio [data-design=background]').selectOption('sunroom');await page.waitForSelector('.gift-webgl-canvas[data-background=sunroom]');
+  await page.getByRole('tab',{name:'风格氛围',exact:true}).click();await page.locator('#gift-studio [data-design=background]').selectOption('sunroom');await page.waitForSelector('.gift-webgl-canvas[data-background=sunroom]');
   await page.locator('[aria-label="照片树画质"]').selectOption('low');
   await page.setViewportSize({width:390,height:844});await page.waitForTimeout(1000);
   const mobile=await page.evaluate(()=>window.PagetoyouTree3D.metrics());assert.ok(mobile.ornaments<desktop.ornaments);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
-  await page.locator('#gift-studio [data-design=tree]').selectOption('sakura');assert.equal(await page.locator('.gift-webgl-canvas').count(),1);
+  await page.locator('#workspace-style .workspace-options').filter({has:page.locator('[data-design=tree]')}).locator(':scope > summary').click();await page.locator('#gift-studio [data-design=tree]').selectOption('sakura');assert.equal(await page.locator('.gift-webgl-canvas').count(),1);
   await page.evaluate(()=>window.PagetoyouStudio.catalog(true));assert.equal(await page.locator('.gift-webgl-canvas').count(),0);
   assert.deepEqual(errors,[]);console.log('Tree batching, scatter/reassemble, photo picking, background, mobile quality and teardown: passed');
  }finally{await browser.close();}
