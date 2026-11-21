@@ -2,6 +2,10 @@
 
 更新时间：2026-11-19。本文面向接手的新聊天/开发助手，优先于旧文档中已经过时的实施状态；遇到差异先核对 Git 和实际文件。
 
+## 最新照片书 · 2026-11-21
+
+v2.1.0-local.1 / codex/photo-book-v2.1 在 v2.0 视觉升级上完成三维照片书与逐页编辑。当前目录 8 类，slideshow/chat 只保留历史兼容。新增 photo-book.js、photo-book.css、book-validation.cjs 已接入入口、构建和校验；gift.photos[].id 与 gift.book 保存页面设计，无数据库迁移。详情 PHOTO-BOOK-v2.1.md。当前本地 http://127.0.0.1:4194；生产仍 v1.8，本次未部署。
+
 ## 最新视觉场景 · 2026-11-21
 
 v2.0.0-local.1 / codex/visual-scenes-v2.0 完成十款相框、三维文字颜色、粒子生日蛋糕与空间背景、画质和设计更新优化。新增 visual-design.js、scene-kit.js、celebration-space.js、visual-scenes.css 已接入本机静态允许列表和发布构建。设计说明 VISUAL-DESIGN-v2.md，专项 tests/browser/visual-scenes-v20.cjs。仍只本地，生产保持 v1.8。用户随后要求移除幻灯/聊天墙新建入口并重构三维可编辑照片书，下一阶段从此版本继续。

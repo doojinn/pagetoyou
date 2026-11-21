@@ -19,3 +19,4 @@
 #gift-studio .stage.has-celebration:is([data-gift-background=paper],[data-gift-background=linen],[data-gift-background=sunroom],[data-gift-background=botanical])>.stage-title{color:#514b3c!important;text-shadow:0 1px 10px #fff!important}
 #gift-studio .stage [data-frame=none].album-card .album-caption{color:#e6dcc5}
 #gift-studio .stage:is([data-gift-background=paper],[data-gift-background=linen],[data-gift-background=sunroom],[data-gift-background=botanical]) [data-frame=none].album-card .album-caption{color:#5b5241}
+body.gift-reader #gift-studio .stage.has-celebration>.scene,body.gift-reader #gift-studio .stage.has-celebration>.stage-content,body.gift-reader #gift-studio .stage.has-cosmos>.scene,body.gift-reader #gift-studio .stage.mode-photo3d>.stage-content{display:none!important}
