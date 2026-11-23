@@ -59,7 +59,53 @@ function closePreview(){dialog.querySelector('.gift-ritual')?.remove();dialog.cl
 dialog.querySelector('.atelier-preview-close').onclick=closePreview;
 dialog.addEventListener('cancel',()=>dialog.querySelector('.gift-ritual')?.remove());
 const stepLabel=document.createElement('p');stepLabel.textContent='① 选择信封与信笺 → ② 填写礼物 → ③ 预览 → ④ 送出';page.querySelector('.atelier-layout').before(stepLabel);const letterEdit=document.createElement('div');letterEdit.className='letter-edit';letterEdit.innerHTML='<p>信笺上的文字 · 实时预览</p><label>标题<input data-letter="letterTitle" maxlength="80"></label><label>正文<textarea data-letter="letterBody" maxlength="2000" rows="4"></textarea></label><label>落款<input data-letter="letterSign" maxlength="80"></label>';page.querySelector('.envelope-choose').before(letterEdit);letterEdit.oninput=e=>{const k=e.target.dataset.letter;if(k==='letterTitle')letterTitle=e.target.value;if(k==='letterBody')letterBody=e.target.value;if(k==='letterSign')letterSign=e.target.value;paint();};
-function currentChoice(){const s=styles[((cursor%styles.length)+styles.length)%styles.length];return {...s,sealStyle:customSeal||defaultSeal(s),opening:customOpening||s.opening,sealEnabled,liner,stamp,recipient,letterTitle,letterBody,letterSign};}
+let letterPages=[],letterMotion='turn';
+const extraSheets=document.createElement('div');extraSheets.className='extra-letter-sheets';
+const sheetFields=document.createElement('div'),addSheet=document.createElement('button');
+addSheet.type='button';addSheet.textContent='＋ 添加一页续笺';
+const motionLabel=document.createElement('label');motionLabel.textContent='翻阅效果';
+const sheetMotion=document.createElement('select');
+for(const [value,label] of [['turn','轻轻翻页'],['rise','纸页上浮'],['fade','光影淡入']])sheetMotion.add(new Option(label,value));
+sheetMotion.onchange=()=>letterMotion=sheetMotion.value;
+motionLabel.append(sheetMotion);extraSheets.append(sheetFields,addSheet,motionLabel);letterEdit.append(extraSheets);
+function editExtraSheets(){
+ sheetFields.replaceChildren();
+ letterPages.forEach((body,i)=>{
+  const label=document.createElement('label'),input=document.createElement('textarea'),remove=document.createElement('button');
+  label.textContent='第 '+(i+2)+' 页正文';input.rows=4;input.maxLength=2000;input.value=body;
+  input.oninput=()=>letterPages[i]=input.value;
+  remove.type='button';remove.textContent='移除此页';remove.onclick=()=>{letterPages.splice(i,1);editExtraSheets();addSheet.focus();};
+  label.append(input);sheetFields.append(label,remove);
+ });
+ addSheet.disabled=letterPages.length>=5;motionLabel.hidden=!letterPages.length;sheetMotion.value=letterMotion;
+}
+addSheet.onclick=()=>{if(letterPages.length<5){letterPages.push('');editExtraSheets();sheetFields.querySelector('label:last-of-type textarea')?.focus();}};
+function currentChoice(){const s=styles[((cursor%styles.length)+styles.length)%styles.length];return {...s,sealStyle:customSeal||defaultSeal(s),opening:customOpening||s.opening,sealEnabled,liner,stamp,recipient,letterTitle,letterBody,letterSign,letterPages:[...letterPages],letterMotion};}
+function readSheets(stage,d,done){
+ const pages=[d.letterBody||'',...(d.letterPages||[]).filter(p=>p.trim())];
+ if(pages.length===1){done?.();return;}
+ const reader=document.createElement('section');reader.className='gift-ritual letter-reader';reader.setAttribute('aria-label','翻阅信笺');
+ const sheet=document.createElement('article');sheet.className='atelier-paper';art(sheet,d.suite||find(d.envelope).suite);
+ const heading=document.createElement('h2'),body=document.createElement('p'),sign=document.createElement('small');
+ body.tabIndex=0;sheet.append(heading,body,sign);
+ const nav=document.createElement('div');nav.className='letter-reader-controls';
+ const prev=document.createElement('button'),next=document.createElement('button'),count=document.createElement('span');
+ for(const button of [prev,next])button.type='button';
+ prev.textContent='上一页';count.setAttribute('aria-live','polite');nav.append(prev,count,next);reader.append(sheet,nav);stage.append(reader);
+ reader.onpointerdown=e=>e.stopPropagation();let index=0,animation;
+ function show(direction){
+  heading.textContent=index===0?(d.letterTitle||'见字如面'):'';body.textContent=pages[index];body.scrollTop=0;
+  sign.textContent=index===pages.length-1?(d.letterSign||''):'';
+  prev.disabled=index===0;next.textContent=index===pages.length-1?'查看礼物':'下一页';count.textContent=(index+1)+' / '+pages.length;
+  animation?.cancel();
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  const transform=d.letterMotion==='fade'?'scale(.97)':d.letterMotion==='rise'?'translateY(32px)':`perspective(900px) rotateY(${-direction*46}deg) translateX(${direction*22}px)`;
+  animation=sheet.animate([{opacity:0,transform},{opacity:1,transform:'none'}],{duration:760,easing:'cubic-bezier(.2,.7,.25,1)'});
+ }
+ prev.onclick=()=>{if(index>0){index--;show(-1);}};
+ next.onclick=()=>{if(index===pages.length-1){reader.remove();done?.();}else{index++;show(1);}};
+ show(1);next.focus({preventScroll:true});
+}
 function preview(){const s=currentChoice(),stage=dialog.querySelector('.atelier-preview-stage');stage.replaceChildren();dialog.showModal();open(stage,{...s,envelope:s.id},()=>{const n=document.createElement('div');n.className='atelier-preview-opened';const sheet=document.createElement('div');sheet.className='atelier-paper';art(sheet,s.suite);sheet.innerHTML='<span>A LETTER, JUST FOR YOU</span><h2>见字如面</h2><p>有些话，<br>值得慢慢说给你听。</p><small>这封信，等你来完成。</small>';sheet.querySelector('h2').textContent=letterTitle;sheet.querySelector('p').textContent=letterBody;sheet.querySelector('small').textContent=letterSign;const replay=document.createElement('button');replay.type='button';replay.textContent='再拆一次 ↻';replay.onclick=preview;n.append(sheet,replay);stage.append(n);});}
 page.querySelector('.preview-envelope').onclick=preview;
 function paint(){const paper=page.querySelector('.suite-preview-paper');paper.querySelector('strong').textContent=letterTitle;paper.querySelector('p').textContent=letterBody;paper.querySelector('small').textContent=letterSign;paper.dataset.liner=liner;paper.dataset.stamp=stamp;
@@ -79,12 +125,12 @@ function collection(){
 for(const name of ['全部','植物','花卉','经典','复古']){const b=document.createElement('button');b.type='button';b.className='collection-filter';b.textContent=name;b.onclick=()=>{filter=name;collection();};page.querySelector('.collection-filters').append(b);}
 function confirm(){
  const s=currentChoice(),chosen=seals.find(x=>x.id===s.sealStyle),suite=suiteFor(s.suite);selected=s.id;
- const detail={envelope:selected,seal:chosen.color,sealStyle:chosen.id,opening:s.opening,suite:s.suite,sealEnabled,packaging:true,liner,stamp,recipient,letterTitle,letterBody,letterSign};
+ const detail={envelope:selected,seal:chosen.color,sealStyle:chosen.id,opening:s.opening,suite:s.suite,sealEnabled,packaging:true,liner,stamp,recipient,letterTitle,letterBody,letterSign,letterPages:s.letterPages,letterMotion};
  if(page.querySelector('.suite-match input').checked)Object.assign(detail,{paper:suite.paper,font:suite.font,background:suite.background});
  page.hidden=true;document.body.classList.remove('choosing-stationery');const done=callback;callback=null;window.dispatchEvent(new CustomEvent('pgy:envelope-selected',{detail}));done?.(detail);
 }
 function select(done,initial=selected,design={}){
- if(callback)return;returnFocus=document.activeElement;callback=done;cursor=Math.max(0,styles.findIndex(s=>s.id===initial));customSeal=design.sealStyle||null;customOpening=design.opening||null;liner=design.liner||'matching';stamp=design.stamp||'botanical';recipient=design.recipient||'';letterTitle=design.letterTitle||'见字如面';letterBody=design.letterBody||'把平凡的日子，写成值得收藏的一页。';letterSign=design.letterSign||'予你，一些温柔的日常。';for(const [key,value] of Object.entries({letterTitle,letterBody,letterSign}))page.querySelector('[data-letter='+key+']').value=value;sealEnabled=design.sealEnabled??((customOpening||find(initial).opening)==='wax');filter='全部';
+ if(callback)return;returnFocus=document.activeElement;callback=done;cursor=Math.max(0,styles.findIndex(s=>s.id===initial));customSeal=design.sealStyle||null;customOpening=design.opening||null;liner=design.liner||'matching';stamp=design.stamp||'botanical';recipient=design.recipient||'';letterTitle=design.letterTitle||'见字如面';letterBody=design.letterBody||'把平凡的日子，写成值得收藏的一页。';letterSign=design.letterSign||'予你，一些温柔的日常。';letterPages=[...(design.letterPages||[])];letterMotion=design.letterMotion||'turn';editExtraSheets();for(const [key,value] of Object.entries({letterTitle,letterBody,letterSign}))page.querySelector('[data-letter='+key+']').value=value;sealEnabled=design.sealEnabled??((customOpening||find(initial).opening)==='wax');filter='全部';
  page.querySelector('[aria-label="信封内衬"]').value=liner;page.querySelector('[aria-label="邮局印记"]').value=stamp;page.querySelector('[aria-label="收信人名字"]').value=recipient;page.querySelector('.suite-match input').checked=!design.envelope;
  page.hidden=false;document.body.classList.add('choosing-stationery');collection();window.scrollTo(0,0);page.querySelector('.envelope-carousel').focus({preventScroll:true});
 }
@@ -100,7 +146,7 @@ function open(stage,d,onOpened){
  const shell=document.createElement('div');shell.className='gift-ritual stationery-ritual';shell.dataset.suite=s.suite;shell.innerHTML='<span class="letter-ritual-overline">SOMETHING SPECIAL, JUST FOR YOU</span><h2>有一份心意，等你亲手打开。</h2>';if(s.recipient)shell.querySelector('h2').textContent=s.recipient+'，有一份心意等你打开。';
  const e=envelope(s);shell.append(e);const action=document.createElement('button');action.className='unwrap-action';action.type='button';const hint=document.createElement('p');hint.className='unwrap-hint';hint.setAttribute('aria-live','polite');let step=0,locked=false;const tied=s.opening!=='wax';action.textContent=tied?'轻拉绳结':s.sealEnabled?'轻触火漆':'打开封舌';hint.textContent=tied?'先解开蝴蝶结，再打开这封信。':'一枚小小的印记，封存了一份认真的心意。';shell.append(action,hint);stage.append(shell);shell.addEventListener('pointerdown',event=>event.stopPropagation());
  const wait=ms=>new Promise(r=>setTimeout(r,matchMedia('(prefers-reduced-motion: reduce)').matches?0:ms));
- action.onclick=async()=>{if(locked)return;locked=true;action.disabled=true;if(step===0&&tied){shell.classList.add('is-untying');hint.textContent='绳结松开了。现在，揭开封口。';await wait(750);if(!shell.isConnected)return;shell.classList.add('is-untied');step=1;action.textContent=s.sealEnabled?'揭开火漆与封舌':'掀开信封';action.disabled=false;locked=false;return;}shell.classList.add('is-turning');await wait(450);if(!shell.isConnected)return;shell.classList.add('is-unsealed');hint.textContent='封口已打开。';await wait(s.sealEnabled?500:150);if(!shell.isConnected)return;shell.classList.add('is-unfolding');await wait(800);if(!shell.isConnected)return;shell.classList.add('is-extracting');hint.textContent='把这一页，轻轻取出来。';await wait(1050);if(!shell.isConnected)return;shell.classList.add('is-presenting');await wait(650);if(!shell.isConnected)return;shell.classList.add('is-revealing');await wait(500);if(!shell.isConnected)return;shell.remove();onOpened?.();};
+ action.onclick=async()=>{if(locked)return;locked=true;action.disabled=true;if(step===0&&tied){shell.classList.add('is-untying');hint.textContent='绳结松开了。现在，揭开封口。';await wait(750);if(!shell.isConnected)return;shell.classList.add('is-untied');step=1;action.textContent=s.sealEnabled?'揭开火漆与封舌':'掀开信封';action.disabled=false;locked=false;return;}shell.classList.add('is-turning');await wait(450);if(!shell.isConnected)return;shell.classList.add('is-unsealed');hint.textContent='封口已打开。';await wait(s.sealEnabled?500:150);if(!shell.isConnected)return;shell.classList.add('is-unfolding');await wait(800);if(!shell.isConnected)return;shell.classList.add('is-extracting');hint.textContent='把这一页，轻轻取出来。';await wait(1050);if(!shell.isConnected)return;shell.classList.add('is-presenting');await wait(650);if(!shell.isConnected)return;shell.classList.add('is-revealing');await wait(500);if(!shell.isConnected)return;shell.remove();readSheets(stage,d,onOpened);};
  let pull=null,ignoreClick=false;e.onpointerdown=event=>{if(!tied||step!==0||locked)return;pull={x:event.clientX,y:event.clientY};e.setPointerCapture(event.pointerId);};e.onpointerup=event=>{if(pull&&Math.hypot(event.clientX-pull.x,event.clientY-pull.y)>28){ignoreClick=true;action.click();setTimeout(()=>ignoreClick=false,200);}pull=null;};e.onpointercancel=()=>pull=null;e.onclick=()=>{if(!ignoreClick)action.click();};e.setAttribute('aria-hidden','true');
 }
 

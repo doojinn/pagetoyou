@@ -1,6 +1,6 @@
 const crypto=require('node:crypto');
 const {promisify}=require('node:util');
-const {validateGift,fail}=require('../gift-validation.cjs');
+const {validateGift,fail,MAX_AUDIO_BYTES,MAX_AUDIO_DATA}=require('../gift-validation.cjs');
 const scrypt=promisify(crypto.scrypt),hash=v=>crypto.createHash('sha256').update(v).digest('hex');
 const refs=gift=>[...new Set([...(Array.isArray(gift.photos)?gift.photos:[]).map(p=>p?.src),gift.design?.backgroundImage,gift.design?.music].filter(v=>typeof v==='string'&&/^\/api\/media\/[a-f0-9]{48}$/.test(v)))];
 const userView=u=>({id:u.id,username:u.username,displayName:u.display_name,createdAt:Number(u.created_at)});
@@ -54,8 +54,8 @@ function createCloudHandler({pool,store,origin:configuredOrigin,platform='generi
    }
    const account=await user(request);
    if(path==='/api/uploads'&&method==='POST'){
-    await rate('uploads:'+account.id,100,60000);const input=await body(request,3100000);if(typeof input.data!=='string'||input.data.length>3000000)throw fail(400,'文件过大。');const m=/^data:(image\/(?:jpeg|png|webp)|audio\/(?:mpeg|wav|ogg));base64,([A-Za-z0-9+/]+={0,2})$/.exec(input.data);if(!m)throw fail(400,'不支持的文件格式。');
-    const bytes=Buffer.from(m[2],'base64');if(!bytes.length)throw fail(400,'文件内容无效。');if(m[1].startsWith('image/'))validateGift({kind:'gallery',title:'upload',author:'',words:'',photos:[{src:input.data}]});else{const valid=m[1]==='audio/wav'?bytes.toString('ascii',0,4)==='RIFF'&&bytes.toString('ascii',8,12)==='WAVE':m[1]==='audio/ogg'?bytes.toString('ascii',0,4)==='OggS':bytes.toString('ascii',0,3)==='ID3'||bytes[0]===255&&(bytes[1]&224)===224;if(!valid)throw fail(400,'音频内容无效。');}
+    await rate('uploads:'+account.id,100,60000);const input=await body(request,MAX_AUDIO_DATA+256);if(typeof input.data!=='string'||input.data.length>MAX_AUDIO_DATA)throw fail(400,'文件过大。');const m=/^data:(image\/(?:jpeg|png|webp)|audio\/(?:mpeg|wav|ogg|mp4));base64,([A-Za-z0-9+/]+={0,2})$/.exec(input.data);if(!m)throw fail(400,'不支持的文件格式。');
+    const bytes=Buffer.from(m[2],'base64');if(!bytes.length)throw fail(400,'文件内容无效。');if(bytes.length>MAX_AUDIO_BYTES)throw fail(413,'音乐超过 4 MB。');if(m[1].startsWith('image/'))validateGift({kind:'gallery',title:'upload',author:'',words:'',photos:[{src:input.data}]});else{const valid=m[1]==='audio/mp4'?bytes.toString('ascii',4,8)==='ftyp':m[1]==='audio/wav'?bytes.toString('ascii',0,4)==='RIFF'&&bytes.toString('ascii',8,12)==='WAVE':m[1]==='audio/ogg'?bytes.toString('ascii',0,4)==='OggS':bytes.toString('ascii',0,3)==='ID3'||bytes[0]===255&&(bytes[1]&224)===224;if(!valid)throw fail(400,'音频内容无效。');}
     const id=crypto.randomBytes(24).toString('hex');await transaction(async db=>{await db.query('SELECT id FROM users WHERE id=$1 FOR UPDATE',[account.id]);const r=await one('SELECT COALESCE(SUM(size),0) AS size,COUNT(*) AS count FROM media WHERE user_id=$1',[account.id],db);if(Number(r.size)+bytes.length>100*1024*1024||Number(r.count)>=500)throw fail(400,'测试期每个账号最多 100 MB / 500 个文件。');await db.query('INSERT INTO media VALUES($1,$2,$3,$4,$5)',[id,account.id,m[1],bytes.length,Date.now()]);});
     try{await store.set(id,bytes);}catch(e){await pool.query('DELETE FROM media WHERE id=$1',[id]);throw e;}return send({url:'/api/media/'+id},201);
    }
