@@ -17,9 +17,42 @@ function make(stage,gift,design){
   const angle=i/72*Math.PI*2;return new THREE.Vector3(Math.cos(angle)*5.5,Math.sin(angle)*5.5,0);
  });
  const ringGeometry=new THREE.BufferGeometry().setFromPoints(ringPoints);
- const ringMaterials=Array.from({length:12},()=>new THREE.LineBasicMaterial({color:0xa9bbff,transparent:true,depthWrite:false}));
+ const ringMaterials=Array.from({length:12},(_,i)=>new THREE.LineBasicMaterial({color:i%3===0?0xe2bde7:0x9fbeff,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending}));
  ringMaterials.forEach(material=>tunnelRings.add(new THREE.LineLoop(ringGeometry,material)));
  tunnelRings.visible=false;scene.add(tunnelRings);
+ const trailCount=100,trailPositions=new Float32Array(trailCount*6),trailGeometry=new THREE.BufferGeometry();
+ const trailPosition=new THREE.BufferAttribute(trailPositions,3).setUsage(THREE.DynamicDrawUsage);
+ trailGeometry.setAttribute('position',trailPosition);
+ const trailMaterial=new THREE.LineBasicMaterial({color:0xaed3ff,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending});
+ const trails=new THREE.LineSegments(trailGeometry,trailMaterial);trails.frustumCulled=false;scene.add(trails);trails.visible=false;
+ const tunnelLook=new THREE.Vector3(),tunnelEnd=new THREE.Vector3();
+ const tunnelRotation=new THREE.Quaternion(),billboardRotation=new THREE.Quaternion();
+ const travelEnd=6.5,gatherEnd=8.4,revealEnd=11;
+ const smooth=(value,min,max)=>THREE.MathUtils.smoothstep(value,min,max);
+ function wallPosition(i,t,target){
+  const angle=i*2.39996+t*.095,depth=5+(i%12)*3.1+Math.floor(i/12)*1.5;
+  return target.set(Math.cos(angle)*5.18,Math.sin(angle)*5.18,2-depth-t*(.6+.15*(i%5)));
+ }
+ function tunnelLighting(t,fade){
+  const visible=fade>.005;tunnelRings.visible=trails.visible=visible;
+  if(!visible)return;
+  tunnelRings.children.forEach((ring,i)=>{
+   const z=2+(i*4+t*6.7)%48;
+   ring.position.z=camera.position.z-z;ring.scale.setScalar(.98+.045*Math.sin(t*2+i));
+   ring.material.opacity=fade*.44*Math.sin(Math.PI*z/51);
+  });
+  trailMaterial.opacity=fade*.68;
+  for(let i=0;i<trailCount;i++){
+   const angle=random(i+137)*Math.PI*2+t*.06,radius=4.85+random(i+997)*1.1;
+   const depth=2+(random(i+333)*52+t*(8+random(i+51)*5))%52,z=camera.position.z-depth;
+   const x=Math.cos(angle)*radius,y=Math.sin(angle)*radius;
+   const offset=i*6;
+   trailPositions[offset]=trailPositions[offset+3]=x;
+   trailPositions[offset+1]=trailPositions[offset+4]=y;
+   trailPositions[offset+2]=z;trailPositions[offset+5]=z-.35-random(i+244)*1.7;
+  }
+  trailPosition.needsUpdate=true;
+ }
  const ui=document.createElement('div');ui.className='photo-space-controls';const status=document.createElement('span');status.className='photo-space-status';status.setAttribute('aria-live','polite');
  const button=(label,fn)=>{const b=document.createElement('button');b.textContent=label;b.onclick=fn;ui.append(b);return b;};
  function explore(){mode='explore';controls.enabled=true;status.textContent='拖动旋转 · 右键平移 · 滚轮 / 双指缩放 · 点击照片';}
@@ -39,21 +72,55 @@ function make(stage,gift,design){
  const resize=new ResizeObserver(()=>key='');resize.observe(stage);canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();loadingDone?.();loadingDone=null;status.textContent='图形渲染已暂停，请刷新恢复。';});
  function draw(now){if(disposed)return;frame=requestAnimationFrame(draw);if(stage.querySelector('.gift-ritual'))return;if(now-last<(currentDesign.renderQuality==='low'?32:15)||document.hidden||!stage.offsetWidth||stage.getBoundingClientRect().bottom<0||stage.getBoundingClientRect().top>innerHeight)return;const dt=Math.min((now-last)/1000,.05);last=now;adaptive.resize(camera);sky.tick(now,reduced.matches);const w=stage.clientWidth,h=stage.clientHeight,k='adaptive';if(key!==k){key=k;}
  const t=((paused?pauseStart:now)-start)/1000, timeTunnel=currentDesign.photoIntro==='tunnel';
- tunnelRings.visible=timeTunnel&&mode==='tunnel'&&t<6.5;
- if(tunnelRings.visible)tunnelRings.children.forEach((ring,i)=>{ring.position.z=camera.position.z-2-i*4;ring.material.opacity=.19*Math.sin(Math.PI*(i+1)/13);});
- if(mode!=='explore'){if(t<6.5){mode='tunnel';camera.position.set(0,0,timeTunnel?2+t*4.3:8+t*3.5);controls.target.set(0,0,-22);status.textContent='回忆穿行 · '+Math.min(items.length,Math.ceil(t/6.5*items.length))+' 张照片';}else if(t<8.2){mode='gather';const a=THREE.MathUtils.smoothstep(t,6.5,8.2);camera.position.set(0,0,30+4*a);controls.target.set(0,0,0);status.textContent='把所有瞬间，汇成一份心意。';}else if(t<10.2){mode='burst';camera.position.set(0,0,34);status.textContent='每段回忆，都有自己的位置。';}else explore();}
- items.forEach((item,i)=>{if(mode==='tunnel'){
- if(timeTunnel){
-  const a=i*2.39996+t*.075, depth=5+(i%12)*3.1+Math.floor(i/12)*1.5;
-  item.group.position.set(Math.cos(a)*5.18,Math.sin(a)*5.18,2-depth-t*.9);
-  item.group.lookAt(0,0,item.group.position.z+2.5);
-  item.group.scale.setScalar(.84);item.group.visible=true;return;
+ if(mode!=='explore'){
+  if(t<travelEnd){
+   mode='tunnel';
+   if(timeTunnel){
+    const travel=t/travelEnd;
+    camera.position.set(.36*Math.sin(travel*Math.PI),.22*Math.sin(travel*2*Math.PI),1.4+28.6*travel**1.42);
+   }else camera.position.set(0,0,8+t*3.5);
+   controls.target.set(0,0,-22);status.textContent=timeTunnel?'沿着光，穿过一段段回忆':'回忆正在一张张出现…';
+  }else if(t<gatherEnd){
+   mode='gather';camera.position.set(0,0,30+4*smooth(t,travelEnd,gatherEnd));
+   controls.target.set(0,0,-22*(1-smooth(t,travelEnd,gatherEnd)));status.textContent='把所有瞬间，汇成一份心意。';
+  }else if(t<revealEnd){
+   mode='burst';camera.position.set(0,0,34);status.textContent='每段回忆，都有自己的位置。';
+  }else explore();
  }
- item.group.position.copy(item.tunnel);item.group.visible=i<Math.max(1,Math.ceil(t/6.5*items.length));item.group.scale.setScalar(1);
- }else if(mode==='gather'){const a=THREE.MathUtils.smoothstep(t,6.5,8.2);const a0=i*2.39996+6.5*.075;const origin=timeTunnel?item.tunnel.set(Math.cos(a0)*5.18,Math.sin(a0)*5.18,2-5-(i%12)*3.1-Math.floor(i/12)*1.5-6.5*.9):item.tunnel;item.group.position.lerpVectors(origin,v.copy(item.home).multiplyScalar(.12),a);item.group.visible=true;item.group.scale.setScalar(1-a*.45);}else if(mode==='burst'){const a=THREE.MathUtils.smoothstep(t,8.2,10.2);item.group.position.copy(item.home).multiplyScalar(.12+.88*a);item.group.scale.setScalar(.55+.45*a);item.group.visible=true;}else{item.group.position.copy(item.home);item.group.scale.setScalar(1);item.group.visible=true;}item.group.quaternion.copy(camera.quaternion);item.group.rotateZ(item.spin);});
- controls.update(dt);camera.updateMatrixWorld();if(!paused)dust.rotation.y+=dt*.009;const begin=performance.now();renderer.render(scene,camera);adaptive.sample(performance.now()-begin);if(pending===0){loadingDone?.();loadingDone=null;}canvas.dataset.phase=mode;canvas.dataset.drawCalls=String(renderer.info.render.calls);}
+ const tunnelFade=timeTunnel&&mode!=='explore'?1-smooth(t,travelEnd-.2,gatherEnd):0;
+ tunnelLighting(t,tunnelFade);
+ controls.update(dt);
+ for(const [i,item] of items.entries()){
+  const group=item.group;
+  if(mode==='tunnel'&&timeTunnel){
+   wallPosition(i,t,group.position);group.lookAt(tunnelLook.set(0,0,group.position.z+2.5));
+   group.scale.setScalar(.84);group.visible=true;continue;
+  }
+  group.quaternion.copy(camera.quaternion);group.rotateZ(item.spin);
+  if(mode==='tunnel'){
+   group.position.copy(item.tunnel);group.visible=i<Math.max(1,Math.ceil(t/travelEnd*items.length));group.scale.setScalar(1);
+  }else if(mode==='gather'){
+   const progress=smooth(t,travelEnd,gatherEnd);
+   const origin=timeTunnel?wallPosition(i,travelEnd,tunnelEnd):item.tunnel;
+   if(timeTunnel){
+    tunnelLook.set(0,0,origin.z+2.5);
+    group.position.copy(origin);billboardRotation.copy(group.quaternion);
+    group.lookAt(tunnelLook);tunnelRotation.copy(group.quaternion);
+    group.quaternion.slerpQuaternions(tunnelRotation,billboardRotation,progress);
+   }
+   group.position.lerpVectors(origin,v.copy(item.home).multiplyScalar(.12),progress);
+   group.scale.setScalar(THREE.MathUtils.lerp(timeTunnel?.84:1,.55,progress));group.visible=true;
+  }else if(mode==='burst'){
+   const delay=(i%6)*.11,progress=smooth(t,gatherEnd+delay,revealEnd);
+   group.position.copy(item.home).multiplyScalar(.12+.88*progress);
+   group.scale.setScalar(.55+.45*progress);group.visible=true;
+  }else{
+   group.position.copy(item.home);group.scale.setScalar(1);group.visible=true;
+  }
+ }
+ camera.updateMatrixWorld();if(!paused)dust.rotation.y+=dt*.009;const begin=performance.now();renderer.render(scene,camera);adaptive.sample(performance.now()-begin);if(pending===0){loadingDone?.();loadingDone=null;}canvas.dataset.phase=mode;canvas.dataset.drawCalls=String(renderer.info.render.calls);}
  update(gift,design);frame=requestAnimationFrame(draw);
- return{stage,update,replay:intro,explore,metrics(){return{...adaptive.metrics,phase:mode,count:items.length,distance:camera.position.distanceTo(controls.target),calls:renderer.info.render.calls,photos:items.map((item,i)=>{const p=item.group.getWorldPosition(new THREE.Vector3()).project(camera);return{i,x:(p.x+1)/2,y:(1-p.y)/2};})};},dispose(){loadingDone?.();disposed=true;cancelAnimationFrame(frame);resize.disconnect();controls.dispose();release();ringGeometry.dispose();ringMaterials.forEach(m=>m.dispose());sky.dispose();dustGeometry.dispose();dotTexture.dispose();dustMaterial.dispose();renderer.dispose();renderer.forceContextLoss();canvas.remove();ui.remove();}};
+ return{stage,update,replay:intro,explore,metrics(){return{...adaptive.metrics,phase:mode,count:items.length,distance:camera.position.distanceTo(controls.target),calls:renderer.info.render.calls,photos:items.map((item,i)=>{const p=item.group.getWorldPosition(new THREE.Vector3()).project(camera);return{i,x:(p.x+1)/2,y:(1-p.y)/2};})};},dispose(){loadingDone?.();disposed=true;cancelAnimationFrame(frame);resize.disconnect();controls.dispose();release();trailGeometry.dispose();trailMaterial.dispose();ringGeometry.dispose();ringMaterials.forEach(m=>m.dispose());sky.dispose();dustGeometry.dispose();dotTexture.dispose();dustMaterial.dispose();renderer.dispose();renderer.forceContextLoss();canvas.remove();ui.remove();}};
 }
 window.PagetoyouPhotoSpace={mount(stage,gift,d){if(active?.stage===stage){active.update(gift,d);return;}this.unmount();active=make(stage,gift,d);},unmount(){active?.dispose();active=null;},replay(){active?.replay();},metrics(){return active?.metrics();}};
 window.dispatchEvent(new Event('pgy:photo-space-ready'));

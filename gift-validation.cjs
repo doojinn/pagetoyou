@@ -35,7 +35,9 @@ function validateGift(input, options={}) {
       if(!Array.isArray(input.card.pages)||input.card.pages.length>5)throw fail(400,'贺卡最多添加 5 页信纸。');
       gift.card.pages=input.card.pages.map(page=>{
         if(!page||typeof page!=='object')throw fail(400,'贺卡信纸无效。');
-        return {title:str(page.title,80),body:str(page.body,2000),sign:str(page.sign,80)};
+        const style=page.style??'inherit';
+        if(!['inherit','olive','rose-garden','blue-porcelain','ribbon-stripe','midnight-gold','pressed-flower'].includes(style))throw fail(400,'贺卡信纸样式无效。');
+        return {title:str(page.title,80),body:str(page.body,2000),sign:str(page.sign,80),style};
       });
     }
     if(input.card.pageMotion!==undefined){

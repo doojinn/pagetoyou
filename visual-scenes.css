@@ -75,3 +75,10 @@ body.gift-reader #gift-studio .stage.has-celebration>.scene,body.gift-reader #gi
 #pgy-prototype .card-page-paper small{align-self:flex-end}
 #pgy-prototype .card-page-navigation{display:flex;justify-content:center;align-items:center;gap:8px;padding:10px 4px;position:relative;z-index:2}
 #pgy-prototype .card-page-paper{border:1px solid #cdb494;outline:1px solid #a87e4f44;outline-offset:-9px;background:repeating-linear-gradient(1deg,#a47b4c06 0 1px,transparent 1px 3px),radial-gradient(ellipse at 44% 25%,#fff8e9,#ead7b8)}
+#pgy-prototype .card-page-paper.pg-canvas{min-height:0;border:0;outline:none;color:var(--pg-ink)}
+#pgy-prototype .card-page-settings .card-page-sample{width:64px;margin:8px 0 12px;pointer-events:none}
+#gift-studio .slide-tap-zones{position:absolute;inset:0;display:grid;grid-template-columns:32% 68%;z-index:3;touch-action:pan-y}
+#gift-studio .slide-tap-zone{border:0;border-radius:0;min-width:0;padding:0;background:transparent;box-shadow:none;cursor:pointer}
+#gift-studio .slide-tap-zone:focus-visible{outline:1px solid #ead9b8aa;outline-offset:-4px}
+#gift-studio .slide-tap-hint{grid-area:2/1;margin:0;color:#e4d8cdb5;font-size:11px;line-height:1.5;text-align:center;letter-spacing:.03em}
+#gift-studio .slide-count{padding-inline-start:.75em;color:#e4d8cd8a;font-variant-numeric:tabular-nums}
