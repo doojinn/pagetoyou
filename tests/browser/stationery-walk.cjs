@@ -13,25 +13,39 @@ const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),asse
   if(external){p.setDefaultTimeout(90000);guest.setDefaultTimeout(90000);}
   await p.goto(base,{waitUntil:'domcontentloaded'});
   await p.locator('.pg-header-trial').click();
-  assert.equal(await p.locator('.collection-card').count(),12);
+  assert.equal(await p.locator('.collection-card:visible').count(),0);
+  const start=await p.locator('.envelope-count').textContent();
+  await p.getByRole('button',{name:'下一款信封'}).click();
+  assert.notEqual(await p.locator('.envelope-count').textContent(),start);
+  await p.getByRole('button',{name:'上一款信封'}).click();
+  assert.equal(await p.locator('.envelope-count').textContent(),start);
+  await p.locator('.atelier-collection > summary').click();
+  assert.equal(await p.locator('.collection-card:visible').count(),12);
   await p.getByRole('button',{name:'花卉',exact:true}).click();assert.equal(await p.locator('.collection-card').count(),5);
+  const direct=p.locator('.collection-card').first(),chosen=await direct.locator('strong').textContent();
+  await direct.click();assert.equal(await p.locator('.stationery-selection h2').textContent(),chosen);
+  assert.equal(await p.locator('.atelier-collection').getAttribute('open'),null);
+  await p.locator('.atelier-collection > summary').click();
   await p.getByRole('button',{name:'全部',exact:true}).click();
   const collection=[['橄榄来信','olive'],['玫瑰花园','rose-garden'],['蓝瓷花笺','blue-porcelain'],['奶油丝带','ribbon-stripe'],['远方的手稿','midnight-gold'],['花落在纸上','pressed-flower']];
+  const directory=p.locator('.atelier-collection');
+  const showDirectory=async()=>{if(!await directory.evaluate(n=>n.open))await directory.locator('summary').click();};
   for(const [name,id]of collection){
+   await showDirectory();
    await p.getByRole('button',{name:'选择信笺套系：'+name,exact:true}).click();
    const source=await p.locator('.suite-preview-paper').evaluate(n=>getComputedStyle(n).backgroundImage.match(/url\("?(.*?)"?\)/)[1]);
    assert.equal(await p.evaluate(async url=>{const r=await fetch(url);if(r.status!==200)return r.status;const blob=await r.blob(),image=await createImageBitmap(blob);const valid=image.width>0&&image.height>0;image.close();return valid?200:0;},source),200,'missing or undecodable artwork '+id);
    assert.equal(await p.locator('.suite-preview-paper').getAttribute('data-suite'),id);
   }
   // A timed, interactive preview must open the actual liner and extract the letter.
-  await p.getByRole('button',{name:'选择信笺套系：蓝瓷花笺',exact:true}).click();
+  await showDirectory();await p.getByRole('button',{name:'选择信笺套系：蓝瓷花笺',exact:true}).click();
   await p.locator('[aria-label="信封内衬"]').selectOption('stripe');await p.locator('[aria-label="邮局印记"]').selectOption('postmark');
   await p.locator('[aria-label="收信人名字"]').fill('小林');await p.locator('.seal-toggle input').check();await p.locator('[data-wax=pearl]').click();await p.locator('.closure-choice select').selectOption('cord');
   await p.locator('.preview-envelope').click();await p.locator('.atelier-preview-dialog .unwrap-action').click();await p.waitForSelector('.atelier-preview-dialog .is-untied');
   await p.locator('.atelier-preview-dialog .unwrap-action').click();await p.waitForSelector('.atelier-preview-dialog .is-unfolding');await p.waitForSelector('.atelier-preview-opened');
   assert.equal(await p.locator('.atelier-preview-opened .atelier-paper').getAttribute('data-suite'),'blue-porcelain');
   await p.locator('.atelier-preview-close').click();
-  for(const width of [390,768,1440]){await p.setViewportSize({width,height:1000});assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'picker overflow at '+width);}
+  for(const width of [390,768,1440]){await p.setViewportSize({width,height:1000});await showDirectory();assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'picker overflow at '+width);await directory.locator('summary').click();}
   await p.locator('.envelope-choose').click();await p.getByRole('button',{name:'选择信封贺卡',exact:true}).click();
   const design=await p.evaluate(()=>window.PagetoyouCard.current().design);
   for(const [k,v]of Object.entries({suite:'blue-porcelain',liner:'stripe',stamp:'postmark',recipient:'小林',sealStyle:'pearl',opening:'cord'}))assert.equal(design[k],v);
@@ -40,7 +54,7 @@ const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),asse
   await p.locator('#pg-content').fill('A LETTER FOR YOU');await p.locator('#pg-content').dispatchEvent('change');
   assert.equal(await p.locator('#pg-canvas').getAttribute('data-suite'),'blue-porcelain');
   for(const [name,id]of [['玫瑰花园','rose-garden'],['蓝瓷花笺','blue-porcelain']]){
-   await p.locator('#pgy-prototype .change-envelope').click();await p.getByRole('button',{name:'选择信笺套系：'+name,exact:true}).click();
+   await p.locator('#pgy-prototype .change-envelope').click();assert.equal(await directory.getAttribute('open'),null);await showDirectory();await p.getByRole('button',{name:'选择信笺套系：'+name,exact:true}).click();
    await p.locator('.envelope-choose').click();assert.equal(await p.locator('#pg-canvas').getAttribute('data-suite'),id);
    assert.match(await p.locator('#pg-canvas').textContent(),/A LETTER FOR YOU/);
   }

@@ -82,3 +82,14 @@
 #gift-studio .preview-head{position:relative}#gift-studio .settings{min-height:calc(100dvh - 78px)}#pgy-prototype #pg-preview{display:none}#pgy-prototype .card-position-options{margin:4px 0 12px}#pgy-prototype .card-position-options>label{margin:0 14px 14px}#pgy-prototype .pg-properties{display:flex;flex-direction:column}
 @media(max-width:800px){#gift-studio .settings{min-height:0}}
 @media(max-width:520px){#gift-studio .tree-webgl-status{display:none}#gift-studio .tree-webgl-controls{padding:7px;gap:5px;bottom:34px}#gift-studio .tree-discovery-hint{bottom:125px;font-size:10px;line-height:1.8;padding:4px 6px;background:transparent}#gift-studio .stage.mode-tree .stage-title{font-size:18px;letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#gift-studio .tree-webgl-controls select{max-width:130px}}
+#stationery-picker details.atelier-collection{padding:0;background:#f8f5ebc9;border-top:1px solid #ded8cb}
+#stationery-picker .atelier-collection>summary{padding:13px 22px;color:#4d5b43;cursor:pointer;font-size:13px}
+#stationery-picker .atelier-collection>summary small{margin-inline-start:7px;color:#787c67;font-size:11px}
+#stationery-picker .atelier-collection .collection-filters{padding:0 14px}
+#stationery-picker .atelier-collection .collection-grid{padding:0 14px 15px;gap:10px;grid-template-columns:repeat(auto-fit,minmax(min(100%,125px),1fr))}
+#stationery-picker .atelier-collection .collection-card-art{height:112px}
+#stationery-picker .atelier-collection .collection-mini-paper{width:46px;top:8px}
+#stationery-picker .atelier-collection .collection-card-art>.tactile-envelope{top:45%;width:77%}
+#stationery-picker .atelier-collection .collection-card-label{padding:6px 3px}
+#stationery-picker .atelier-collection .collection-card-label strong{font-size:12px}
+#stationery-picker .atelier-collection .collection-card[aria-pressed=true]{outline:1px solid #78836a;outline-offset:2px}
