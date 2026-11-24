@@ -1,5 +1,7 @@
 const {validateBook}=require('./book-validation.cjs');
-const kinds = new Set(['card', 'gallery', 'tree', 'slideshow', 'album', 'photo3d', 'words', 'cake', 'chat', 'leaf', 'parchment']);
+const kinds = new Set(['card', 'gallery', 'tree', 'slideshow', 'album', 'photo3d', 'words', 'verse', 'cake', 'chat', 'leaf', 'parchment']);
+const MAX_AUDIO_BYTES=10*1024*1024;
+const MAX_AUDIO_DATA=4*Math.ceil(MAX_AUDIO_BYTES/3)+32;
 const fail = (status, message) => Object.assign(new Error(message), { status });
 
 function validateGift(input, options={}) {
@@ -29,9 +31,20 @@ function validateGift(input, options={}) {
       if (e.x < 0 || e.x > 100 || e.y < 0 || e.y > 100 || e.size < 1 || e.size > 100 || Math.abs(e.angle) > 360 || !['ink', 'rose', 'olive'].includes(e.color)) throw fail(400, '元素设置无效。');
       return { id: i + 1, type: e.type, name: str(e.name || '', 40), content: str(e.content || '', 2000), x: e.x, y: e.y, size: e.size, angle: e.angle, color: e.color };
     }) };
+    if(input.card.pages!==undefined){
+      if(!Array.isArray(input.card.pages)||input.card.pages.length>5)throw fail(400,'贺卡最多添加 5 页信纸。');
+      gift.card.pages=input.card.pages.map(page=>{
+        if(!page||typeof page!=='object')throw fail(400,'贺卡信纸无效。');
+        return {title:str(page.title,80),body:str(page.body,2000),sign:str(page.sign,80)};
+      });
+    }
+    if(input.card.pageMotion!==undefined){
+      if(!['turn','rise','fade'].includes(input.card.pageMotion))throw fail(400,'翻页效果无效。');
+      gift.card.pageMotion=input.card.pageMotion;
+    }
   }
   if ((['tree', 'gallery', 'slideshow', 'photo3d', 'chat'].includes(gift.kind)||gift.kind==='album'&&!input.book) && !gift.photos.length) throw fail(400, '此模板至少需要一张照片。');
-  if (gift.kind === 'words' && !gift.words.trim()) throw fail(400, '请填写祝福文字。');
+  if (['words','verse'].includes(gift.kind) && !gift.words.trim()) throw fail(400, '请填写祝福文字。');
   if(input.design){
     const d=input.design;const allowed={background:['midnight','rose','forest','paper','aurora','sunroom','linen','sunset','botanical','nebula','brick','galaxy','saturn','deepblue'],font:['serif','sans','kai','elegant','brush','hand','literary'],opening:['wax','cord','ribbon'],paper:['cream','vintage','botanical','noir'],tree:['christmas','sakura','willow']};
     gift.design={};for(const [key,values] of Object.entries(allowed)){if(!values.includes(d[key]))throw fail(400,'礼物样式无效。');gift.design[key]=d[key];}
@@ -42,14 +55,18 @@ function validateGift(input, options={}) {
     for(const key of ['letterTitle','letterBody','letterSign'])if(d[key]!==undefined)gift.design[key]=str(d[key],key==='letterBody'?2000:80);
     if(d.recipient!==undefined)gift.design.recipient=str(d.recipient,30).trim();
     if(d.seal!==undefined){if(typeof d.seal!=='string'||!/^#[0-9a-fA-F]{6}$/.test(d.seal))throw fail(400,'火漆颜色无效。');gift.design.seal=d.seal;}
-    for(const [key,values] of Object.entries({snowLevel:['gentle','normal','heavy'],photoFrame:['none','walnut','silver','polaroid','museum','float','film','deckle','arch','postcard'],cakeStyle:['sapphire','rose','champagne'],renderQuality:['auto','low','high'],ornamentStyle:['baubles','crystals','mixed'],sealStyle:['rose','pearl','crimson','sage','violet','gold'],galleryStyle:['wall','ribbon','scrapbook'],photoIntro:['journey','explore']})){if(d[key]!==undefined){if(!values.includes(d[key]))throw fail(400,'照片场景样式无效。');gift.design[key]=d[key];}}
+    for(const [key,values] of Object.entries({snowLevel:['gentle','normal','heavy'],photoFrame:['none','walnut','silver','polaroid','museum','float','film','deckle','arch','postcard'],cakeStyle:['sapphire','rose','champagne'],renderQuality:['auto','low','high'],ornamentStyle:['baubles','crystals','mixed'],sealStyle:['rose','pearl','crimson','sage','violet','gold'],galleryStyle:['wall','ribbon','scrapbook'],photoIntro:['journey','tunnel','explore']})){if(d[key]!==undefined){if(!values.includes(d[key]))throw fail(400,'照片场景样式无效。');gift.design[key]=d[key];}}
     if(d.backgroundOpacity!==undefined){if(!Number.isFinite(d.backgroundOpacity)||d.backgroundOpacity<20||d.backgroundOpacity>100)throw fail(400,'背景可见度无效。');gift.design.backgroundOpacity=d.backgroundOpacity;}
     if(d.backgroundImage){const checked=validateGift({kind:'gallery',title:'background',author:'',words:'',photos:[{src:d.backgroundImage,name:'',caption:''}]},options);gift.design.backgroundImage=checked.photos[0].src;}
     gift.design.color=d.color;gift.design.glow=d.glow;gift.design.ending=str(d.ending,300);gift.design.music='';
-    if(d.music){if(typeof d.music!=='string'||d.music.length>2900000||(!media(d.music,'audio')&&!/^data:audio\/(mpeg|wav|ogg);base64,[A-Za-z0-9+/]+=*$/.test(d.music)))throw fail(400,'音乐格式无效或超过限制。');gift.design.music=d.music;}
+    if(d.music){
+      const data=typeof d.music==='string'&&d.music.length<=MAX_AUDIO_DATA&&/^data:audio\/(mpeg|wav|ogg|mp4);base64,([A-Za-z0-9+/]+={0,2})$/.exec(d.music);
+      if(!media(d.music,'audio')&&(!data||Buffer.from(data[2],'base64').length>MAX_AUDIO_BYTES))throw fail(400,'音乐格式无效或超过 10 MB。');
+      gift.design.music=d.music;
+    }
   }
   if(input.book!==undefined){if(input.kind!=='album')throw fail(400,'此模板不支持照片书设计。');gift.book=validateBook(input.book,gift.photos);}
   return gift;
 }
 
-module.exports={validateGift,fail};
+module.exports={validateGift,fail,MAX_AUDIO_BYTES,MAX_AUDIO_DATA};

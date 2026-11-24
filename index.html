@@ -108,10 +108,60 @@ q('#pg-story-button').onclick=()=>openDialog('story');q('#pg-dialog-close').oncl
 q('#pg-overlay').addEventListener('keydown',ev=>{if(ev.key==='Escape')closeDialog();if(ev.key==='Tab'){const buttons=[...q('.pg-dialog').querySelectorAll('button')];const i=buttons.indexOf(document.activeElement);if(ev.shiftKey&&i===0){ev.preventDefault();buttons.at(-1).focus();}else if(!ev.shiftKey&&i===buttons.length-1){ev.preventDefault();buttons[0].focus();}}});
 const menus={gifts:[['生日信封贺卡','首版体验'],['电子生日蛋糕','筹备中'],['3D 照片树','灵感构想'],['回忆影集','灵感构想'],['星空祝福','灵感构想'],['日常小纸条','灵感构想']],moments:[['朋友生日','首版体验'],['恋人纪念日','灵感构想'],['家人祝福','灵感构想'],['毕业告别','灵感构想'],['日常感谢','灵感构想'],['给未来的自己','灵感构想']]};
 qa('[data-menu]').forEach(n=>n.onclick=()=>{const type=n.dataset.menu;const isOpen=n.getAttribute('aria-expanded')==='true';qa('[data-menu]').forEach(b=>b.setAttribute('aria-expanded','false'));q('#pg-mega').hidden=isOpen;if(isOpen)return;n.setAttribute('aria-expanded','true');q('#pg-menu-label').textContent=type==='gifts'?'THE GIFT ATELIER / 礼物灵感':'FOR EVERY LITTLE MOMENT / 重要时刻';q('#pg-menu-title').textContent=type==='gifts'?'找到表达心意的方式':'每一次，都值得用心';q('#pg-menu-items').replaceChildren();menus[type].forEach(([title,status],i)=>{const b=document.createElement('button');b.append(document.createTextNode(title));const small=document.createElement('small');small.textContent=status;b.append(small);b.onclick=()=>i===0?go('templates'):openDialog('concept',title);q('#pg-menu-items').append(b);});});q('#pg-menu-close').onclick=()=>{q('#pg-mega').hidden=true;qa('[data-menu]').forEach(n=>n.setAttribute('aria-expanded','false'));};
+let cardPages=[],cardPageMotion='turn',readPage=0;
+const pageEditor=document.createElement('details');pageEditor.className='card-page-editor';
+pageEditor.innerHTML='<summary>贺卡页数与翻阅效果</summary><div class="card-page-fields"></div><button type="button" class="card-page-add">＋ 添加一页信纸</button><label>翻阅效果<select><option value="turn">纸页翻动</option><option value="rise">轻轻抽出</option><option value="fade">柔光叠化</option></select></label>';
+q('#pg-canvas').after(pageEditor);
+const pageFields=pageEditor.querySelector('.card-page-fields'),pageAdd=pageEditor.querySelector('.card-page-add'),pageMotion=pageEditor.querySelector('select');
+const pagePaper=document.createElement('article');pagePaper.className='card-page-paper';pagePaper.hidden=true;
+const pageNav=document.createElement('nav');pageNav.className='card-page-navigation';pageNav.setAttribute('aria-label','贺卡翻页');pageNav.hidden=true;
+pageNav.innerHTML='<button type="button">上一页</button><span aria-live="polite"></span><button type="button">下一页</button>';
+q('#pg-gift').after(pagePaper,pageNav);
+const [pageBack,pageForward]=pageNav.querySelectorAll('button');
+function drawCardPage(direction=0){
+ const item=cardPages[readPage-1],front=q('#pg-gift');
+ front.hidden=!!item;pagePaper.hidden=!item;pageNav.hidden=!cardPages.length;
+ if(item){
+  const title=document.createElement('h3'),body=document.createElement('p'),sign=document.createElement('small');
+  title.textContent=item.title;body.textContent=item.body;body.tabIndex=0;sign.textContent=item.sign;
+  pagePaper.replaceChildren(title,body,sign);pagePaper.dataset.suite=front.dataset.suite||'';
+  for(const name of ['--suite-x','--suite-y','--gift-font'])pagePaper.style.setProperty(name,front.style.getPropertyValue(name));
+ }
+ pageNav.querySelector('span').textContent=(readPage+1)+' / '+(cardPages.length+1);
+ pageBack.disabled=readPage===0;pageForward.disabled=readPage===cardPages.length;
+ if(direction&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
+  const transform=cardPageMotion==='rise'?'translateY(30px)':cardPageMotion==='fade'?'scale(.97)':
+   'perspective(950px) rotateY('+(-direction*45)+'deg) translateX('+(direction*24)+'px)';
+  const sheet=item?pagePaper:front;sheet.getAnimations().forEach(animation=>animation.cancel());
+  sheet.animate([{opacity:0,transform},{opacity:1,transform:'none'}],{duration:880,easing:'cubic-bezier(.22,.66,.28,1)'});
+ }
+}
+function drawPageEditor(){
+ pageFields.replaceChildren();pageAdd.disabled=cardPages.length>=5;pageMotion.value=cardPageMotion;
+ cardPages.forEach((item,i)=>{
+  const sheet=document.createElement('details');sheet.className='card-page-settings';
+  const summary=document.createElement('summary');summary.textContent='第 '+(i+2)+' 页';sheet.append(summary);
+  for(const [key,label,limit] of [['title','标题',80],['body','正文',2000],['sign','落款',80]]){
+   const field=document.createElement('label'),input=document.createElement(key==='body'?'textarea':'input');
+   field.textContent=label;input.value=item[key];input.maxLength=limit;if(key==='body')input.rows=4;
+   input.oninput=()=>{item[key]=input.value;};field.append(input);sheet.append(field);
+  }
+  const remove=document.createElement('button');remove.type='button';remove.textContent='删除此页';
+  remove.onclick=()=>{cardPages.splice(i,1);readPage=0;drawPageEditor();drawCardPage();pageAdd.focus();};
+  sheet.append(remove);pageFields.append(sheet);
+ });
+}
+pageAdd.onclick=()=>{if(cardPages.length>=5)return;cardPages.push({title:'',body:'',sign:''});drawPageEditor();const sheet=pageFields.lastElementChild;sheet.open=true;sheet.querySelector('input').focus();};
+pageMotion.onchange=()=>{cardPageMotion=pageMotion.value;};
+pageBack.onclick=()=>{if(readPage>0){readPage--;drawCardPage(-1);if(pageBack.disabled)pageForward.focus();}};
+pageForward.onclick=()=>{if(readPage<cardPages.length){readPage++;drawCardPage(1);if(pageForward.disabled)pageBack.focus();}};
+q('#pg-preview').addEventListener('click',()=>{readPage=0;drawCardPage();});
+q('#pg-replay').addEventListener('click',()=>{readPage=0;drawCardPage();});
+for(const selector of ['#pg-use','#pg-blank'])q(selector).addEventListener('click',()=>{cardPages=[];cardPageMotion='turn';readPage=0;drawPageEditor();drawCardPage();});
 window.PagetoyouCard={
- current(){return {kind:'card',title:q('#card-gift-title')?.value||'一封给你的信',author:'',words:'',photos:structuredClone(cardPhotos),theme:'forest',zoom:85,transition:'fade',card:{elements:structuredClone(elements),mode}};},
+ current(){return {kind:'card',title:q('#card-gift-title')?.value||'一封给你的信',author:'',words:'',photos:structuredClone(cardPhotos),theme:'forest',zoom:85,transition:'fade',card:{elements:structuredClone(elements),mode,pages:structuredClone(cardPages),pageMotion:cardPageMotion}};},
  setPhotos(photos){snapshot();cardPhotos=structuredClone(photos);const existing=elements.filter(e=>e.type==='photo');for(let i=existing.length;i<photos.length;i++)elements.push({id:Date.now()+i,type:'photo',name:'照片 '+(i+1),content:photos[i].caption||photos[i].name,x:8+i*28,y:55,size:24,angle:(i-1)*5,color:'ink'});mode='free';render();window.dispatchEvent(new Event('pgy:card-photos'));},
- load(gift,receiver){cardPhotos=structuredClone(gift.photos||[]);if(q('#card-gift-title'))q('#card-gift-title').value=gift.title;elements=structuredClone(gift.card.elements);mode=gift.card.mode;selected=elements[0]?.id;history=[];future=[];render();go(receiver?'receiver':'editor',false);}
+ load(gift,receiver){cardPhotos=structuredClone(gift.photos||[]);if(q('#card-gift-title'))q('#card-gift-title').value=gift.title;elements=structuredClone(gift.card.elements);mode=gift.card.mode;selected=elements[0]?.id;history=[];future=[];cardPages=structuredClone(gift.card.pages||[]);cardPageMotion=gift.card.pageMotion||'turn';readPage=0;render();drawPageEditor();drawCardPage();go(receiver?'receiver':'editor',false);}
 };
 render();go(page,false);
 if(globalThis.Tweak){const design={blur:1.1};const t=new Tweak({container:q('.pg-hero'),onChange:()=>q('.pg-wall').style.filter=`blur(${design.blur}px)`});t.addSlider(design,'blur',{label:'作品墙虚化',min:0,max:4,step:.1,unit:'px'});}

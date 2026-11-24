@@ -1,6 +1,31 @@
 const crypto=require('node:crypto');
 const {promisify}=require('node:util');
-const {validateGift,fail}=require('../gift-validation.cjs');
+const {validateGift,fail,MAX_AUDIO_BYTES}=require('../gift-validation.cjs');
+const audioChunkSize=2*1024*1024, pendingAudio='application/octet-stream';
+const audioTypes=new Set(['audio/mpeg','audio/wav','audio/ogg','audio/mp4']);
+function validAudio(bytes,mime){
+ if(mime==='audio/wav')return bytes.toString('ascii',0,4)==='RIFF'&&bytes.toString('ascii',8,12)==='WAVE';
+ if(mime==='audio/ogg')return bytes.toString('ascii',0,4)==='OggS';
+ if(mime==='audio/mp4')return bytes.toString('ascii',4,8)==='ftyp';
+ return bytes.toString('ascii',0,3)==='ID3'||bytes[0]===255&&(bytes[1]&224)===224;
+}
+function serveAudio(bytes,mime,range,headers){
+ const length=bytes.byteLength;
+ const responseHeaders={...headers,'Content-Type':mime,'Accept-Ranges':'bytes'};
+ if(range){
+  const match=/^bytes=(\d*)-(\d*)$/.exec(range);
+  const start=match?.[1]?Number(match[1]):Math.max(0,length-Number(match?.[2]));
+  const end=Math.min(length-1,start+audioChunkSize-1,match?.[1]&&match[2]?Number(match[2]):Infinity);
+  if(!match||!Number.isSafeInteger(start)||start<0||start>=length||end<start)return new Response(null,{status:416,headers:{...responseHeaders,'Content-Range':`bytes */${length}`}});
+  return new Response(bytes.subarray(start,end+1),{status:206,headers:{...responseHeaders,'Content-Range':`bytes ${start}-${end}/${length}`,'Content-Length':String(end-start+1)}});
+ }
+ let offset=0;
+ const stream=new ReadableStream({pull(controller){
+  if(offset>=length){controller.close();return;}
+  controller.enqueue(bytes.subarray(offset,offset+audioChunkSize));offset+=audioChunkSize;
+ }});
+ return new Response(stream,{headers:{...responseHeaders,'Content-Length':String(length)}});
+}
 const scrypt=promisify(crypto.scrypt),hash=v=>crypto.createHash('sha256').update(v).digest('hex');
 const refs=gift=>[...new Set([...(Array.isArray(gift.photos)?gift.photos:[]).map(p=>p?.src),gift.design?.backgroundImage,gift.design?.music].filter(v=>typeof v==='string'&&/^\/api\/media\/[a-f0-9]{48}$/.test(v)))];
 const userView=u=>({id:u.id,username:u.username,displayName:u.display_name,createdAt:Number(u.created_at)});
@@ -44,7 +69,9 @@ function createCloudHandler({pool,store,origin:configuredOrigin,platform='generi
    const asset=/^\/api\/media\/([a-f0-9]{48})$/.exec(path);
    if(asset&&method==='GET'){
     const account=await user(request,false);const r=await one("SELECT m.* FROM media m WHERE m.id=$1 AND (m.user_id=$2 OR EXISTS(SELECT 1 FROM gift_media gm JOIN gifts g ON gm.gift_id=g.id WHERE gm.media_id=m.id AND gm.kind='published' AND g.status='published'))",[asset[1],account?.id||'']);
-    if(!r)throw fail(404,'文件不存在或尚未公开。');const bytes=await store.get(r.id);if(!bytes)throw fail(404,'文件暂不可用。');return new Response(bytes,{headers:{...headers,'Content-Type':r.mime,'Content-Disposition':'inline'}});
+    if(!r||r.mime===pendingAudio)throw fail(404,'文件不存在或尚未公开。');const bytes=await store.get(r.id);if(!bytes)throw fail(404,'文件暂不可用。');
+    if(audioTypes.has(r.mime))return serveAudio(new Uint8Array(bytes),r.mime,request.headers.get('range'),headers);
+    return new Response(bytes,{headers:{...headers,'Content-Type':r.mime,'Content-Disposition':'inline'}});
    }
    if(path==='/api/auth/recover'&&method==='POST'){
     await rate('recover-ip:'+ip,12,3600000);const input=await body(request,4096),username=typeof input.username==='string'?input.username.trim().toLowerCase():'';
@@ -53,6 +80,56 @@ function createCloudHandler({pool,store,origin:configuredOrigin,platform='generi
     await transaction(async db=>{const account=await one('SELECT * FROM users WHERE username=$1 FOR UPDATE',[username],db);const r=account&&await one('DELETE FROM recovery_codes WHERE code_hash=$1 AND user_id=$2 AND expires_at>$3 RETURNING code_hash',[code,account.id,Date.now()],db);if(!r)throw fail(400,'账号或恢复码不正确，或恢复码已失效。');await db.query('UPDATE users SET salt=$1,password_hash=$2 WHERE id=$3',[salt,password,account.id]);await db.query('DELETE FROM sessions WHERE user_id=$1',[account.id]);await db.query('DELETE FROM recovery_codes WHERE user_id=$1',[account.id]);});return send({ok:true});
    }
    const account=await user(request);
+   if(path==='/api/uploads/audio'&&method==='POST'){
+    await rate('uploads:'+account.id,100,60000);
+    const {size}=await body(request,256);
+    if(!Number.isSafeInteger(size)||size<1||size>MAX_AUDIO_BYTES)throw fail(413,'音乐最多 10 MB。');
+    const id=crypto.randomBytes(24).toString('hex');
+    const expired=await transaction(async db=>{
+     await db.query('SELECT id FROM users WHERE id=$1 FOR UPDATE',[account.id]);
+     const abandoned=await rows('DELETE FROM media WHERE user_id=$1 AND mime=$2 AND created_at<$3 RETURNING id',[account.id,pendingAudio,Date.now()-86400000],db);
+     const usage=await one('SELECT COALESCE(SUM(size),0) AS size,COUNT(*) AS count FROM media WHERE user_id=$1',[account.id],db);
+     if(Number(usage.size)+size>100*1024*1024||Number(usage.count)>=500)throw fail(400,'测试期每个账号最多 100 MB / 500 个文件。');
+     await db.query('INSERT INTO media VALUES($1,$2,$3,$4,$5)',[id,account.id,pendingAudio,size,Date.now()]);
+     return abandoned;
+    });
+    await Promise.allSettled(expired.map(item=>store.delete?.(item.id)));
+    return send({id},201);
+   }
+   const audioUpload=/^\/api\/uploads\/audio\/([a-f0-9]{48})$/.exec(path);
+   if(audioUpload&&method==='DELETE'){
+    const deleted=await one('DELETE FROM media WHERE id=$1 AND user_id=$2 AND mime=$3 RETURNING id',[audioUpload[1],account.id,pendingAudio]);
+    if(deleted)await store.delete?.(deleted.id);
+    return send({ok:true});
+   }
+   if(audioUpload&&method==='PUT'){
+    await rate('uploads:'+account.id,100,60000);
+    const input=await body(request,Math.ceil(audioChunkSize/3)*4+512);
+    if(!audioTypes.has(input.mime)||!Number.isSafeInteger(input.offset)||input.offset<0||typeof input.data!=='string'||!/^[A-Za-z0-9+/]+={0,2}$/.test(input.data))throw fail(400,'音频分段无效。');
+    const part=Buffer.from(input.data,'base64');
+    if(!part.length||part.length>audioChunkSize)throw fail(413,'音频分段过大。');
+    return await transaction(async db=>{
+     const item=await one('SELECT * FROM media WHERE id=$1 AND user_id=$2 FOR UPDATE',[audioUpload[1],account.id],db);
+     if(!item)throw fail(404,'此上传已结束，请重新选择音乐。');
+     const total=Number(item.size),end=input.offset+part.length;
+     if(end>total)throw fail(413,'音乐长度不一致。');
+     const previous=Buffer.from(await store.get(item.id)||[]);
+     if(item.mime!==pendingAudio){
+      if(item.mime===input.mime&&end===total&&previous.subarray(input.offset,end).equals(part))return send({url:'/api/media/'+item.id});
+      throw fail(409,'此上传已完成。');
+     }
+     if(input.offset!==previous.length){
+      if(end>previous.length||!previous.subarray(input.offset,end).equals(part))throw fail(409,'音频分段顺序不一致。');
+      if(end<total)return send({offset:previous.length});
+     }
+     const bytes=input.offset===previous.length?Buffer.concat([previous,part]):previous;
+     if(end===total&&!validAudio(bytes,input.mime))throw fail(400,'音频内容无效。');
+     if(bytes!==previous)await store.set(item.id,bytes);
+     if(end<total)return send({offset:bytes.length});
+     await db.query('UPDATE media SET mime=$1 WHERE id=$2',[input.mime,item.id]);
+     return send({url:'/api/media/'+item.id});
+    });
+   }
    if(path==='/api/uploads'&&method==='POST'){
     await rate('uploads:'+account.id,100,60000);const input=await body(request,3100000);if(typeof input.data!=='string'||input.data.length>3000000)throw fail(400,'文件过大。');const m=/^data:(image\/(?:jpeg|png|webp)|audio\/(?:mpeg|wav|ogg));base64,([A-Za-z0-9+/]+={0,2})$/.exec(input.data);if(!m)throw fail(400,'不支持的文件格式。');
     const bytes=Buffer.from(m[2],'base64');if(!bytes.length)throw fail(400,'文件内容无效。');if(m[1].startsWith('image/'))validateGift({kind:'gallery',title:'upload',author:'',words:'',photos:[{src:input.data}]});else{const valid=m[1]==='audio/wav'?bytes.toString('ascii',0,4)==='RIFF'&&bytes.toString('ascii',8,12)==='WAVE':m[1]==='audio/ogg'?bytes.toString('ascii',0,4)==='OggS':bytes.toString('ascii',0,3)==='ID3'||bytes[0]===255&&(bytes[1]&224)===224;if(!valid)throw fail(400,'音频内容无效。');}
