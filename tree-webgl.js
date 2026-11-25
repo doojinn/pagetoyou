@@ -30,6 +30,12 @@ function make(stage,gift,design){
  button('重置视角',()=>{cameraGoal=null;camera.position.set(0,targetSpread?.2:.4,targetSpread?(stage.clientWidth<650?.85:3.6):17.1);controls.target.set(0,targetSpread?0:-.15,0);controls.update();});
  const qualitySelect=document.createElement('select');qualitySelect.setAttribute('aria-label','照片树画质');qualitySelect.innerHTML='<option value="auto">自适应画质</option><option value="low">流畅画质</option><option value="high">精细画质</option>';qualitySelect.onchange=()=>{quality=qualitySelect.value;size='';bloom.enabled=quality!=='low';window.dispatchEvent(new CustomEvent('pgy:design-update',{detail:{isCard:false,patch:{renderQuality:quality}}}));};ui.append(qualitySelect);
  const status=document.createElement('span');status.className='tree-webgl-status';status.textContent='拖动环绕 · 滚轮或双指拉近 · 轻点照片';ui.append(status);stage.append(ui);const guide=document.createElement('p');guide.className='tree-discovery-hint';guide.setAttribute('role','status');stage.append(guide);ui.addEventListener('pointerdown',e=>e.stopPropagation());
+ const toggle=button('收起操作',()=>{
+  const collapsed=ui.classList.toggle('is-collapsed');
+  toggle.textContent=collapsed?'展开操作':'收起操作';
+  toggle.setAttribute('aria-expanded',String(!collapsed));
+ });
+ toggle.type='button';toggle.className='tree-controls-toggle';toggle.setAttribute('aria-expanded','true');
  function releaseGroup(){loadingDone?.();if(!group)return;naturalRoot=null;starLight=null;sparkles=null;ground=null;garland=null;const geometries=new Set(),materials=new Set(),textures=new Set();group.traverse(n=>{if(n.geometry)geometries.add(n.geometry);for(const m of n.material?(Array.isArray(n.material)?n.material:[n.material]):[]){materials.add(m);if(m.map)textures.add(m.map);}});geometries.forEach(g=>g.dispose());textures.forEach(t=>t.dispose());materials.forEach(m=>m.dispose());scene.remove(group);group=null;items=[];photoMeshes=[];}
  function assembled(i,count){const t=(i+.5)/count,a=i*2.399963,tree=currentDesign.tree;let y=3.8-t*7.7,r=(.13+t*2.65)*(.84+.16*rand(i+5));if(tree==='sakura'){const p=Math.acos(1-2*t);return new THREE.Vector3(Math.sin(p)*Math.cos(a)*3.3,Math.cos(p)*2.1+1.1,Math.sin(p)*Math.sin(a)*3);}if(tree==='willow'){r=2.9*Math.sin(t*Math.PI*.55);y=3.6-7.4*t*t;}return new THREE.Vector3(Math.cos(a)*r,y,Math.sin(a)*r);}
  function scattered(i){const a=i*2.399963,t=rand(i+13),r=3+rand(i+29)*4.7;return new THREE.Vector3(Math.cos(a)*r,(t-.5)*10,Math.sin(a)*r);}
