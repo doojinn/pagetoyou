@@ -11,36 +11,59 @@ let active=null;
 const reduced=matchMedia('(prefers-reduced-motion: reduce)');
 const rand=n=>{const x=Math.sin(n*127.13+31.77)*43758.5453;return x-Math.floor(x);};
 const christmasLooks={
- gold:{lights:[0xba742e,0xf2a94e,0xffd693,0xfff2d0],metal:[0xc29551,0x9b2838,0xe5c38c,0x286145],night:['#24233a','#080910']},
+ gold:{lights:[0xe2741f,0xffa82e,0xffcf61,0xffefd0],metal:[0xdca140,0xb91d35,0xeec16d,0x22634b],night:['#352237','#0d090f']},
  rose:{lights:[0x94516b,0xee87a9,0xffbfd4,0xffeedb],metal:[0xc38c91,0x982b57,0xead0b9,0x70619a],night:['#352441','#0d0916']},
  aurora:{lights:[0x236c85,0x69c8ba,0xa1e8e1,0xd4caff],metal:[0x73abb1,0x7360af,0xb0d9de,0x276b70],night:['#122e47','#060d1a']}
 };
-function treeRadius(height){return .09+2.62*height**.88;}
+function treeRadius(height){return .11+2.69*height**.79;}
 function christmasLights(look,mobile){
- const count=mobile?3300:5600,positions=new Float32Array(count*3),colors=new Float32Array(count*3),sizes=new Float32Array(count),phases=new Float32Array(count);
+ const count=mobile?4800:8000,positions=new Float32Array(count*3),destinations=new Float32Array(count*3);
+ const colors=new Float32Array(count*3),sizes=new Float32Array(count),phases=new Float32Array(count);
  const palette=look.lights.map(color=>new THREE.Color(color));
+ const accentColors=[new THREE.Color(look.metal[1]),new THREE.Color(look.metal[3])];
  for(let i=0;i<count;i++){
-  const t=.025+.965*rand(i+113),angle=i*2.399963,spiral=i%5===0;
+  const t=.018+.974*rand(i+113)**.87,angle=i*2.399963,spiral=i%7===0;
   const theta=spiral?t*Math.PI*16+(rand(i+77)-.5)*.16:angle;
   const scallop=.98+.075*Math.cos(t*7*Math.PI*2+theta*.54);
-  const radius=treeRadius(t)*(spiral?1.055:scallop*(.59+.45*rand(i+872)));
+  const radius=treeRadius(t)*(spiral?1.055:scallop*(.26+.78*Math.sqrt(rand(i+872))));
   positions.set([Math.sin(theta)*radius,3.83-7.7*t,Math.cos(theta)*radius],i*3);
-  const accent=i%43===0;
-  const color=palette[accent?3:spiral?2:i%3?1:0];colors.set([color.r,color.g,color.b],i*3);
-  sizes[i]=accent?2.7:spiral?1.1+rand(i+36)*.44:.60+rand(i+36)*.82;
+  const lat=1-2*rand(i+1539),horizontal=Math.sqrt(1-lat*lat),shell=(mobile?7.1:4.9)+rand(i+327)**1.9*(mobile?5.7:5.4);
+  destinations.set([Math.sin(angle)*horizontal*shell,lat*shell*.89,Math.cos(angle)*horizontal*shell],i*3);
+  const hero=i%113===0,accent=i%21===0;
+  const color=hero||accent?palette[3]:i%17<2?accentColors[i%17]:palette[spiral?2:i%3?1:0];
+  colors.set([color.r,color.g,color.b],i*3);
+  sizes[i]=hero?5.6:accent?2.9:spiral?1.25+rand(i+36)*.55:.72+rand(i+36)*.91;
   phases[i]=rand(i+191)*Math.PI*2;
  }
  const geometry=new THREE.BufferGeometry();
  geometry.setAttribute('position',new THREE.BufferAttribute(positions,3));
+ geometry.setAttribute('aDestination',new THREE.BufferAttribute(destinations,3));
  geometry.setAttribute('aColor',new THREE.BufferAttribute(colors,3));
  geometry.setAttribute('aSize',new THREE.BufferAttribute(sizes,1));
  geometry.setAttribute('aPhase',new THREE.BufferAttribute(phases,1));
  const material=new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
-  uniforms:{uTime:{value:0},uFade:{value:1},uScale:{value:1}},
-  vertexShader:'attribute vec3 aColor;attribute float aSize;attribute float aPhase;uniform float uTime;uniform float uScale;varying vec3 vColor;varying float vLight;void main(){vec4 p=modelViewMatrix*vec4(position,1.);vColor=aColor;vLight=.62+.38*pow(.5+.5*sin(aPhase+uTime),4.);gl_PointSize=clamp(aSize*uScale*28./-p.z,1.,14.);gl_Position=projectionMatrix*p;}',
-  fragmentShader:'uniform float uFade;varying vec3 vColor;varying float vLight;void main(){vec2 q=(gl_PointCoord-.5)*2.;float r=dot(q,q);if(r>1.)discard;float core=exp(-r*10.);float glow=exp(-r*3.)*.39;gl_FragColor=vec4(vColor*(1.+core*1.1),(core+glow)*vLight*uFade*(1.-r));}'
+  uniforms:{uTime:{value:0},uSpread:{value:0},uScale:{value:1}},
+  vertexShader:`attribute vec3 aColor;attribute vec3 aDestination;attribute float aSize;attribute float aPhase;
+   uniform float uTime,uSpread,uScale;varying vec3 vColor;varying float vLight,vHero;
+   void main(){
+    float transition=smoothstep(0.,1.,uSpread),arc=sin(transition*3.14159)*.66;
+    vec3 p=mix(position,aDestination,transition);
+    p.xz=mat2(cos(arc),sin(arc),-sin(arc),cos(arc))*p.xz;
+    p+=vec3(sin(uTime+aPhase),cos(uTime*.8+aPhase),sin(uTime*.64+aPhase))*.095*transition;
+    vec4 view=modelViewMatrix*vec4(p,1.);
+    vColor=aColor;vLight=.67+.33*pow(.5+.5*sin(aPhase+uTime),4.);
+    vHero=step(4.,aSize);
+    gl_PointSize=clamp(aSize*uScale*31./max(.2,-view.z),1.,mix(18.,27.,transition));
+    gl_Position=projectionMatrix*view;
+   }`,
+  fragmentShader:`varying vec3 vColor;varying float vLight,vHero;
+   void main(){vec2 q=abs((gl_PointCoord-.5)*2.);float r=dot(q,q);if(r>1.)discard;
+    float core=exp(-r*13.),halo=exp(-r*3.)*.55;
+    float flare=vHero*(exp(-q.x*23.-q.y*2.8)+exp(-q.y*23.-q.x*2.8))*.72;
+    gl_FragColor=vec4(vColor*(1.+core*1.36),(core+halo+flare)*vLight*(1.-r));
+   }`
  });
- return new THREE.Points(geometry,material);
+ const lights=new THREE.Points(geometry,material);lights.frustumCulled=false;return lights;
 }
 function make(stage,gift,design){
  const canvas=document.createElement('canvas');canvas.className='gift-webgl-canvas';canvas.setAttribute('aria-label','可切换树种与装饰的三维照片树，拖动旋转、滚轮或双指缩放，点击照片查看');
@@ -56,10 +79,11 @@ function make(stage,gift,design){
  const raycaster=new THREE.Raycaster(),mouse=new THREE.Vector2(),temp=new THREE.Object3D(),targetVector=new THREE.Vector3();
  const ui=document.createElement('div');ui.className='tree-webgl-controls';
  const button=(text,fn)=>{const b=document.createElement('button');b.textContent=text;b.onclick=fn;ui.append(b);return b;};
- const burst=button('散开 · 照片星云',()=>{targetSpread=targetSpread?0:1;if(targetSpread){savedCamera=camera.position.clone();savedTarget=controls.target.clone();controls.target.set(0,0,0);cameraGoal=new THREE.Vector3(0,.2,stage.clientWidth<650?.85:3.6);const wrap=stage.closest('.preview-wrap');if(wrap&&!wrap.classList.contains('full')&&!document.body.classList.contains('gift-reader')){document.querySelector('#gift-full')?.click();burstExpanded=true;}}else{cameraGoal=savedCamera||new THREE.Vector3(0,.4,17.1);controls.target.copy(savedTarget||new THREE.Vector3(0,-.15,0));if(burstExpanded){if(stage.closest('.preview-wrap')?.classList.contains('full'))document.querySelector('#gift-full')?.click();burstExpanded=false;}}controls.autoRotate=automatic&&!targetSpread;burst.textContent=targetSpread?'聚合 · '+({sakura:'樱花树',willow:'垂柳光树'}[currentDesign?.tree]||'圣诞树'):'散开 · 照片星云';});
+ const cloudDistance=()=>stage.clientWidth<650?.85:(currentDesign?.tree==='christmas'?13.4:3.6);
+ const burst=button('散开 · 照片星云',()=>{targetSpread=targetSpread?0:1;if(targetSpread){savedCamera=camera.position.clone();savedTarget=controls.target.clone();controls.target.set(0,0,0);cameraGoal=new THREE.Vector3(0,.2,cloudDistance());const wrap=stage.closest('.preview-wrap');if(wrap&&!wrap.classList.contains('full')&&!document.body.classList.contains('gift-reader')){document.querySelector('#gift-full')?.click();burstExpanded=true;}}else{cameraGoal=savedCamera||new THREE.Vector3(0,.4,17.1);controls.target.copy(savedTarget||new THREE.Vector3(0,-.15,0));if(burstExpanded){if(stage.closest('.preview-wrap')?.classList.contains('full'))document.querySelector('#gift-full')?.click();burstExpanded=false;}}controls.autoRotate=automatic&&!targetSpread;burst.textContent=targetSpread?'聚合 · '+({sakura:'樱花树',willow:'垂柳光树'}[currentDesign?.tree]||'圣诞树'):'散开 · 照片星云';});
  button('靠近看看',()=>{cameraGoal=null;camera.position.lerp(controls.target,.25);});button('退远一点',()=>{cameraGoal=null;camera.position.sub(controls.target).multiplyScalar(1.3).add(controls.target);});
  const rotate=button(automatic?'暂停旋转':'继续旋转',()=>{automatic=!automatic;controls.autoRotate=automatic;rotate.textContent=automatic?'暂停旋转':'继续旋转';});
- button('重置视角',()=>{cameraGoal=null;camera.position.set(0,targetSpread?.2:.4,targetSpread?(stage.clientWidth<650?.85:3.6):17.1);controls.target.set(0,targetSpread?0:-.15,0);controls.update();});
+ button('重置视角',()=>{cameraGoal=null;camera.position.set(0,targetSpread?.2:.4,targetSpread?cloudDistance():17.1);controls.target.set(0,targetSpread?0:-.15,0);controls.update();});
  const qualitySelect=document.createElement('select');qualitySelect.setAttribute('aria-label','照片树画质');qualitySelect.innerHTML='<option value="auto">自适应画质</option><option value="low">流畅画质</option><option value="high">精细画质</option>';qualitySelect.onchange=()=>{quality=qualitySelect.value;size='';bloom.enabled=quality!=='low';window.dispatchEvent(new CustomEvent('pgy:design-update',{detail:{isCard:false,patch:{renderQuality:quality}}}));};ui.append(qualitySelect);
  const status=document.createElement('span');status.className='tree-webgl-status';status.textContent='拖动环绕 · 滚轮或双指拉近 · 轻点照片';ui.append(status);stage.append(ui);const guide=document.createElement('p');guide.className='tree-discovery-hint';guide.setAttribute('role','status');stage.append(guide);ui.addEventListener('pointerdown',e=>e.stopPropagation());
  const toggle=button('收起操作',()=>{
@@ -131,7 +155,7 @@ function make(stage,gift,design){
  }
 
  function update(next,d){const treeChanged=currentDesign&&currentDesign.tree!==d.tree,previousSpread=spread,previousTarget=targetSpread;setBackdrop(d);spaceSky.update(d.tree==='christmas'&&d.background==='midnight'?{...d,background:'paper'}:d);if(d.renderQuality&&d.renderQuality!==currentDesign?.renderQuality){quality=d.renderQuality;qualitySelect.value=quality;bloom.enabled=quality!=='low';size='';}bloom.strength=.12+d.glow/100*.38;warm.intensity=6+d.glow*.1;const unchanged=currentGift&&currentGift.photos.length===next.photos.length&&currentGift.photos.every((p,i)=>p.src===next.photos[i].src&&p.caption===next.photos[i].caption&&p.name===next.photos[i].name)&&['tree','paper','color','font','photoFrame','ornamentStyle','treeGifts','treeLook'].every(k=>currentDesign[k]===d[k])&&builtMobile===(stage.clientWidth<650);currentGift=next;currentDesign=d;if(unchanged)return;const token=++generation;releaseGroup();loadingDone=window.PagetoyouLoading?.begin(stage,'正在点亮这棵回忆树…');pendingPhotos=next.photos.length;canvas.dataset.tree=d.tree;group=new THREE.Group();scene.add(group);if(treeChanged){if(burstExpanded&&stage.closest('.preview-wrap')?.classList.contains('full'))document.querySelector('#gift-full')?.click();cameraGoal=null;camera.position.set(0,.4,17.1);controls.target.set(0,-.15,0);savedCamera=null;savedTarget=null;controls.autoRotate=automatic;burstExpanded=false;}targetSpread=treeChanged?0:previousTarget;spread=treeChanged?0:previousSpread;burst.textContent=targetSpread?'聚合 · '+({sakura:'樱花树',willow:'垂柳光树'}[d.tree]||'圣诞树'):'散开 · 照片星云';bloom.strength=.1+d.glow/100*.3;
-  const mobile=stage.clientWidth<650;builtMobile=mobile;const count=mobile?224:345;ornamentCount=count;lastSpread=-1;let naturalAnchors=[];if(d.tree==='christmas'){const look=christmasLooks[d.treeLook]||christmasLooks.gold;canvas.dataset.treeLook=d.treeLook||'gold';lightCanopy=christmasLights(look,mobile);group.add(lightCanopy);const sphere=new THREE.SphereGeometry(1,mobile?16:20,mobile?12:14),box=new THREE.BoxGeometry(1,1,1);
+  const mobile=stage.clientWidth<650;builtMobile=mobile;const count=mobile?262:405;ornamentCount=count;lastSpread=-1;let naturalAnchors=[];if(d.tree==='christmas'){const look=christmasLooks[d.treeLook]||christmasLooks.gold;canvas.dataset.treeLook=d.treeLook||'gold';lightCanopy=christmasLights(look,mobile);group.add(lightCanopy);const sphere=new THREE.SphereGeometry(1,mobile?16:20,mobile?12:14),box=new THREE.BoxGeometry(1,1,1);
   const gold=new THREE.MeshPhysicalMaterial({color:look.metal[0],metalness:1,roughness:.2,envMapIntensity:1.2,clearcoat:.65,clearcoatRoughness:.16});
   const red=new THREE.MeshPhysicalMaterial({color:look.metal[1],metalness:.35,roughness:.2,envMapIntensity:1.5,clearcoat:1,clearcoatRoughness:.08});
   const champagne=new THREE.MeshStandardMaterial({color:look.metal[2],metalness:.96,roughness:.2,envMapIntensity:1.15});
@@ -163,11 +187,11 @@ function make(stage,gift,design){
     const scale=(9+radius*.55)/radius;item.away.x*=scale;item.away.z*=scale;
    }
   }
-  const rows=Math.ceil(next.photos.length/9)||1;
+  const rows=Math.ceil(next.photos.length/(d.tree==='christmas'?7:9))||1;
   next.photos.forEach((p,i)=>{const photoGroup=photoArtwork(p,d,{width:.9,resolution:640,index:i,onReady:()=>{if(token===generation)pendingPhotos--;},onError:()=>{if(token===generation){pendingPhotos--;status.textContent='部分照片未能读取，请重新上传原图。';}}});photoMeshes.push(photoGroup.userData.face);group.add(photoGroup);const home=track(photoGroup,(i+.5)/Math.max(1,next.photos.length)*count,count,1,false);if(d.tree==='christmas'){const t=(i+.9)/(next.photos.length+1.8),a=i*2.399963+.5,r=treeRadius(t)*1.08+.08;home.set(Math.cos(a)*r,3.8-t*7.7,Math.sin(a)*r);}else{home.copy(naturalAnchors[i%naturalAnchors.length]);home.y-=.65;home.multiply(new THREE.Vector3(1.03,1,1.03));}const item=items.at(-1);item.photo=true;
    if(mobile){
     const row=i%rows,slot=Math.floor(i/rows),countInRow=Math.ceil((next.photos.length-row)/rows);
-    const angle=(slot+(row%2)*.5)/countInRow*Math.PI*2;
+    const angle=(slot+(row%2)*(d.tree==='christmas'?.29:.5))/countInRow*Math.PI*2;
     const latitude=(row-(rows-1)/2)*.32;
     item.away.set(Math.sin(angle)*6.4*Math.cos(latitude),6.4*Math.sin(latitude),-Math.cos(angle)*6.4*Math.cos(latitude));
    }
@@ -180,10 +204,10 @@ function make(stage,gift,design){
  function draw(t){if(disposed)return;frame=requestAnimationFrame(draw);if(stage.querySelector('.gift-ritual'))return;const rect=stage.getBoundingClientRect();if(lost||document.hidden||!stage.offsetWidth||rect.bottom<0||rect.top>innerHeight){last=t;return;}if(builtMobile!==(stage.clientWidth<650)){const beforeSpread=spread,beforeTarget=targetSpread;update(currentGift,currentDesign);spread=beforeSpread;targetSpread=beforeTarget;lastSpread=-1;burst.textContent=targetSpread?'聚合 · '+({sakura:'樱花树',willow:'垂柳光树'}[currentDesign?.tree]||'圣诞树'):'散开 · 照片星云';}const interval=quality==='low'?32:16;if(t-lastDraw<interval)return;const dt=Math.min(.08,(t-last)/1000||.016);last=t;lastDraw=t;
   const w=stage.clientWidth,h=stage.clientHeight,dpr=quality==='high'?Math.min(devicePixelRatio,2):quality==='low'?1:Math.min(devicePixelRatio,1.6),key=w+':'+h+':'+dpr;if(key!==size){size=key;renderer.setPixelRatio(dpr);renderer.setSize(w,h,false);composer.setPixelRatio(dpr);composer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();}
   spread=THREE.MathUtils.damp(spread,targetSpread,3.7,dt);
-  const fieldOfView=builtMobile?43+spread*23:43;
+  const fieldOfView=builtMobile?43+spread*23:43+(currentDesign.tree==='christmas'?spread*12:0);
   if(Math.abs(camera.fov-fieldOfView)>.03){camera.fov=fieldOfView;camera.updateProjectionMatrix();}
   const changed=new Set();const moving=Math.abs(spread-lastSpread)>.00015;for(const item of items){targetVector.lerpVectors(item.home,item.away,spread);if(item.instanced){if(!moving)continue;temp.position.copy(targetVector);temp.rotation.copy(item.spin);temp.scale.setScalar(item.scale);temp.updateMatrix();item.object.setMatrixAt(item.index,temp.matrix);changed.add(item.object);}else{if(item.photo)item.object.scale.setScalar((currentDesign.tree==='christmas'?.69:.65)+(1.3-(currentDesign.tree==='christmas'?.40:.65))*spread);item.object.position.copy(targetVector);if(spread>.2)item.object.quaternion.slerp(camera.quaternion,.08);else if(item.object.userData.homeRotation)item.object.quaternion.slerp(item.object.userData.homeRotation,.12);}}changed.forEach(mesh=>mesh.instanceMatrix.needsUpdate=true);
-  if(lightCanopy){const u=lightCanopy.material.uniforms;u.uTime.value=reduced.matches?0:t*.0014;u.uFade.value=(1-spread)**2;u.uScale.value=Math.min(dpr,1.65)*Math.max(.78,Math.min(1.45,h/470));lightCanopy.visible=spread<.95;}
+  if(lightCanopy){const u=lightCanopy.material.uniforms;u.uTime.value=reduced.matches?0:t*.0014;u.uSpread.value=spread;u.uScale.value=Math.min(dpr,1.65)*Math.max(.78,Math.min(1.45,h/470));}
   lastSpread=spread;if(cameraGoal){camera.position.lerp(cameraGoal,reduced.matches?1:1-Math.exp(-dt*4));if(camera.position.distanceTo(cameraGoal)<.01)cameraGoal=null;}if(naturalRoot){naturalRoot.scale.setScalar(Math.max(.001,1-spread));naturalRoot.visible=spread<.98;}if(garland){garland.visible=spread<.98;garland.material.opacity=(1-spread)*.7;}if(ground)ground.visible=spread<.6;if(starLight)starLight.material.opacity=(currentDesign.glow/100)*(1-spread)*(.55+(reduced.matches?0:Math.sin(t*.0012)*.1));if(sparkles){sparkles.visible=spread<.8;sparkles.material.opacity=(1-spread)*(.65+(reduced.matches?0:Math.sin(t*.0016)*.15));}spaceSky.tick(t,reduced.matches);controls.update(dt);renderer.info.autoReset=false;renderer.info.reset();const begin=performance.now();composer.render();const cost=performance.now()-begin;frames.push(cost);if(frames.length>60)frames.shift();if(++fpsSamples%90===0){const average=frames.reduce((n,x)=>n+x,0)/frames.length;if(quality==='auto'&&average>24){bloom.enabled=false;qualitySelect.value='low';quality='low';size='';status.textContent='流畅模式 · 拖动探索，轻点照片';}}
   guide.textContent=targetSpread?'左右 / 上下拖动探索 · 滚轮或双指缩放 · 轻点照片放大':'轻点下方「散开 · 照片星云」，展开藏在树里的回忆';guide.classList.toggle('is-exploring',!!targetSpread);canvas.dataset.photoFrame=currentDesign.photoFrame||'none';canvas.dataset.drawCalls=String(renderer.info.render.calls);canvas.dataset.orbs=String(ornamentCount);canvas.dataset.mode=targetSpread?'cloud':'tree';canvas.dataset.webgl='ready';if(pendingPhotos===0){loadingDone?.();loadingDone=null;}
  }
