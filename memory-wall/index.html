@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#04060d"><meta name="color-scheme" content="dark"><title>聊天星河 · 予页</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="enhance.css"></head><body>
+<div id="bg" aria-hidden="true"></div>
+<div id="boot"><div class="boot-ring"></div><div class="boot-ring r2"></div><div class="boot-in"><div class="boot-title">予页 <b>· 聊天星河</b></div><div class="boot-sub">把说过的话，还给星空</div><div class="boot-bar"><i></i></div></div></div>
+<div class="hud">
+  <header class="brand"><div class="wordmark">予页 <span>PAGE TO YOU</span></div><h1>我们说过的话，<br>都成为了<b>星光。</b></h1><p id="date-span">一段对话，一整个宇宙。</p><div class="stat"><span><i id="s-msgs">–</i> 句对话</span><span><i id="s-sessions">–</i> 个聊天日</span><span hidden><i id="s-tools">–</i></span></div></header>
+  <div class="search"><label for="q">寻找一句话</label><div class="search-row"><input id="q" type="search" placeholder="搜索这片星河…" autocomplete="off"><button class="mute" id="mute" aria-label="音效开关">音效</button></div><div id="search-results" aria-live="polite"></div></div>
+  <button class="menu" id="menu" aria-label="聊天日期列表">日期</button>
+  <aside class="side" id="side"><p class="hint">时光的坐标 <span>CHAPTERS</span></p><div id="list"></div></aside>
+  <section class="panel" id="panel" aria-label="聊天记录" aria-hidden="true" inert><span class="glow-edge" aria-hidden="true"></span><button class="close" id="close" aria-label="关闭聊天记录">×</button><div class="head"><div class="proj" id="p-proj"></div><h2 id="p-title"></h2><div class="meta" id="p-meta"></div></div><div class="msgs" id="msgs"></div></section>
+  <button class="expand" id="expand" aria-label="展开全部消息星">展开星尘</button>
+  <div class="scene-caption"><span id="scene-kicker">THE SHAPE OF OUR MEMORIES</span><p id="scene-caption">每一颗星光，都有一句话的重量。</p></div>
+  <nav class="scene-dock" aria-label="星河视图"><div class="mode-switch" role="group" aria-label="展示方式"><button data-mode="galaxy" aria-pressed="true">星河</button><button data-mode="helix" aria-pressed="false">时光螺旋</button><button data-mode="wall" aria-pressed="false">回忆之墙</button><button data-mode="flow" aria-pressed="false">文字穿梭</button></div><span class="dock-divider"></span><button id="tour" aria-pressed="false">开始漫游</button><button id="home">全景</button><button id="fullscreen" aria-label="切换全屏">全屏</button></nav>
+  <div class="timeline-wrap"><label for="timeline">时间坐标 <span id="timeline-label">全部时光</span></label><input id="timeline" type="range" min="-1" max="0" value="-1" step="1" aria-label="选择聊天日期"><div id="timeline-ticks"></div></div>
+  <div class="tips">拖动探索 · 滚轮靠近 · 点击星辰重读对话 <a href="https://github.com/weitakaodaxue/memory-universe" target="_blank" rel="noreferrer">基于 Memory Universe</a></div>
+  <div id="mtip" aria-hidden="true"></div><div id="reticle" aria-hidden="true"><span class="ret-ring"></span><span class="ret-tick t"></span><span class="ret-tick r"></span><span class="ret-tick b"></span><span class="ret-tick l"></span><span class="ret-coord"></span></div>
+</div><script src="vendor/three.min.js"></script><script src="enhance.js"></script><script src="app.js"></script></body></html>
