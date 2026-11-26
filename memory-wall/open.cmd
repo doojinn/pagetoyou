@@ -6,6 +6,10 @@ if errorlevel 1 (
   pause
   exit /b 1
 )
-start "" "http://127.0.0.1:4196"
-node scripts/serve-memory-wall.cjs
-pause
+node scripts/build-memory-wall.cjs
+if errorlevel 1 (
+  echo Failed to build the viewer. Please keep this window open.
+  pause
+  exit /b 1
+)
+start "" "%cd%\.data\memory-wall\Chat-Galaxy.html"

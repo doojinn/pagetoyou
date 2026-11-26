@@ -11,7 +11,9 @@ node scripts/import-memory-wall.cjs "你的 Moect 导出文件夹"
 node scripts/serve-memory-wall.cjs
 ```
 
-浏览器打开 http://127.0.0.1:4196 。已导入后只需要第二行。也可双击 `memory-wall/open.cmd`。
+浏览器打开 http://127.0.0.1:4196 。已导入后只需要第二行。
+
+推荐直接双击 `memory-wall/open.cmd`：它会生成并打开 `.data/memory-wall/Chat-Galaxy.html`，将程序、样式和完整聊天数据打包到一个离线 HTML 中，无需保持服务运行。也可手动执行 `node scripts/build-memory-wall.cjs` 后双击该 HTML。媒体仍从原导出目录读取；移动文件到另一台电脑时，这些本机媒体路径将失效。离线 HTML 含真实聊天，保留在本机被 Git 忽略的目录。
 
 ## 体验
 
