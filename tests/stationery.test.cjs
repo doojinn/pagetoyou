@@ -26,7 +26,8 @@ test('snow and Christmas ornaments survive validation, including explicit off ch
   const saved=validateGift({...tree,design:{...design,snow,treeGifts,ornamentStyle}});
   assert.equal(saved.design.snow,snow);assert.equal(saved.design.treeGifts,treeGifts);assert.equal(saved.design.ornamentStyle,ornamentStyle);
  }
- for(const invalid of [{snow:'false'},{treeGifts:1},{ornamentStyle:'unsupported'}])assert.throws(()=>validateGift({...tree,design:{...design,...invalid}}),{status:400});
+ for(const treeLook of ['gold','rose','aurora'])assert.equal(validateGift({...tree,design:{...design,treeLook}}).design.treeLook,treeLook);
+ for(const invalid of [{snow:'false'},{treeGifts:1},{ornamentStyle:'unsupported'},{treeLook:'unsupported'}])assert.throws(()=>validateGift({...tree,design:{...design,...invalid}}),{status:400});
  const legacy=validateGift(tree);assert.equal(legacy.design.snow,undefined);assert.equal(legacy.design.ornamentStyle,undefined);
 });
 
