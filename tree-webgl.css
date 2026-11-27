@@ -14,3 +14,22 @@
 #gift-studio .tree-webgl-controls.is-collapsed+.tree-discovery-hint{display:none}
 #gift-studio .tree-webgl-controls .tree-controls-toggle{min-height:30px}
 #gift-studio .tree-webgl-controls.is-collapsed .tree-controls-toggle{background:#101914c4;color:#eee2c1}
+/* The recipient sees the gift first; camera tools are available on demand. */
+#gift-studio .stage.mode-tree.tree-winter-reader>.stage-title{z-index:3;color:#fff0d5;font-family:var(--gift-font,Georgia,serif)!important;letter-spacing:.04em;text-shadow:0 2px 18px #070d20;max-height:3em;line-height:1.45;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;pointer-events:none}
+#gift-studio .tree-winter-reader .tree-discovery-hint{display:none}
+#gift-studio .tree-winter-reader .tree-receiver-primary{position:absolute;z-index:6;bottom:38px;left:50%;transform:translateX(-50%);min-height:42px;padding:8px 24px;border:1px solid #eac7838c;border-radius:100px;background:#16182ae8;color:#ffedc4;font-size:12px;white-space:nowrap}
+#gift-studio .tree-winter-reader .tree-webgl-controls:not(.is-collapsed){bottom:90px}
+#gift-studio .tree-winter-reader .tree-webgl-controls.is-collapsed{bottom:38px}
+#gift-studio .tree-winter-reader .tree-webgl-controls>button:first-child{display:none}
+@media(min-width:800px){
+ #gift-studio .stage.mode-tree.tree-winter-reader>.stage-title{top:8%;left:6%;right:auto;width:26%;max-height:4.5em;-webkit-line-clamp:3;text-align:left;font-size:clamp(24px,3.2vw,42px)}
+ #gift-studio .stage.mode-tree.tree-winter-reader>.stage-sign{left:6%;right:auto;text-align:left}
+}
+@media(max-width:799px){
+ #gift-studio .stage.mode-tree.tree-winter-reader>.stage-title{top:36px;left:8%;right:8%;font-size:clamp(17px,4.8vw,25px)}
+}
+
+@media(max-width:799px){
+ body:has(.reader-preview-exit:not([hidden])) #gift-studio .stage.mode-tree.tree-winter-reader>.stage-title{top:48px}
+ #gift-studio .stage.mode-tree.tree-winter-reader[data-long-title]>.stage-title{font-size:clamp(14px,4vw,18px)}
+}
